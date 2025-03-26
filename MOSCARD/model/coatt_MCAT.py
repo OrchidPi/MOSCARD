@@ -1,0 +1,753 @@
+
+from collections import OrderedDict
+from os.path import join
+import pdb
+import math
+
+import numpy as np
+
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+
+from model.model_utils import *
+from MedCLIP.medclip.modeling_medclip import MedCLIPModel, PromptClassifier, MedCLIPVisionModel, MedCLIPVisionModelViT
+# from medclip import MedCLIPModel, MedCLIPVisionModelViT, MedCLIPVisionModel
+
+import torch
+from torch import Tensor
+# from torch.nn.modules.linear import _LinearWithBias
+from torch.nn.init import xavier_uniform_
+from torch.nn.init import constant_
+from torch.nn.init import xavier_normal_
+from torch.nn.parameter import Parameter
+from torch.nn import Module
+
+###########################
+### MCAT Implementation ###
+###########################
+class MCAT(nn.Module):
+    def __init__(self, 
+                 cfg,
+                 n_classes=4,
+                 model_size_cxr='small',
+                 model_size_ecg='small',
+                 fusion='concat',
+                 dropout=0.25):
+        super(MCAT, self).__init__()
+        #### Example size dicts: adapt as you see fit
+        self.size_dict_cxr = {"small": [256, 256], "big": [512, 384]}
+        self.size_dict_ecg = {"small": [256, 256], "big": [512, 384]}
+        self.cfg = cfg
+        #### Store hyperparams
+        self.n_classes = n_classes
+        self.fusion = fusion
+        #### CXR / ECG backbone placeholders
+        # Replace these with your actual model or a wrapper that returns patch embeddings.
+        # self.backbone = create_twomodal_densenet(cfg)
+        self.backbone1 = MedCLIPVisionModelViT(checkpoint=None)  # ECG backbone
+        self.backbone2 = MedCLIPVisionModelViT(checkpoint=None)  # CXR backbone
+        self.pos_embedding = PositionalEncoding(d_model=cfg.d_model_t,
+                                                max_len=cfg.max_len)
+        
+        d_model = 512  # e.g. dimension of each patch embedding
+        self.coattn = nn.MultiheadAttention(embed_dim=d_model, num_heads=8)
+
+        
+        #### Transformer encoders + Attention Heads
+        encoder_layer_cxr = nn.TransformerEncoderLayer(
+            d_model=d_model, nhead=8, dim_feedforward=512, dropout=dropout
+        )
+        self.cxr_transformer = nn.TransformerEncoder(encoder_layer_cxr, num_layers=2)
+        
+        encoder_layer_ecg = nn.TransformerEncoderLayer(
+            d_model=d_model, nhead=8, dim_feedforward=512, dropout=dropout
+        )
+        self.ecg_transformer = nn.TransformerEncoder(encoder_layer_ecg, num_layers=2)
+        
+        # Example attention heads: replace Attn_Net_Gated with your own if needed
+        self.cxr_attention_head = Attn_Net_Gated(L=d_model, D=d_model, 
+                                                 dropout=dropout, n_classes=1)
+        self.ecg_attention_head = Attn_Net_Gated(L=d_model, D=d_model, 
+                                                 dropout=dropout, n_classes=1)
+        
+
+        # Example MLP after attention
+        self.cxr_rho = nn.Sequential(
+            nn.Linear(d_model, int(d_model/2)),
+            nn.ReLU(),
+            nn.Dropout(dropout)
+        )
+        self.ecg_rho = nn.Sequential(
+            nn.Linear(d_model, int(d_model/2)),
+            nn.ReLU(),
+            nn.Dropout(dropout)
+        )
+        
+
+        
+        #### Fusion
+        if self.fusion == 'concat':
+            self.mm = nn.Sequential(
+                nn.Linear(d_model, int(d_model/2)),
+                nn.ReLU(),
+                nn.Linear(int(d_model/2), int(d_model/4)),
+                nn.ReLU()
+            )
+        elif self.fusion == 'bilinear':
+            self.mm = BilinearFusion(dim1=d_model, dim2=d_model,
+                                     scale_dim1=8, scale_dim2=8, mmhid=d_model)
+        else:
+            self.mm = None
+
+
+        self.mm1 = nn.Sequential(
+                nn.Linear(int(d_model/2), int(d_model/4)),
+                nn.ReLU()
+            )
+        
+        #### Classifier (e.g., for survival)
+        ### Fused features
+        self.classifiers = nn.ModuleList()
+        for idx, num_class in enumerate(self.cfg.num_classes):
+            # Create a separate linsear layer for each task
+            fc = nn.Linear(int(d_model/4), num_class)
+            self.classifiers.append(fc)
+
+        self.causal_classifiers = nn.ModuleList()
+        for idx, num_class in enumerate(self.cfg.num_causal):
+            # Create a separate linear layer for each task
+            fc = nn.Linear(int(d_model/4), num_class)
+            self.causal_classifiers.append(fc)
+
+        
+
+
+    def forward(self, CXR_feat, ECG_feat):
+        embedding_dim = 512
+        main_logits = [torch.randn(self.cfg.train_batch_size, num) for num in self.cfg.num_classes]
+        cxr_logits = [torch.randn(self.cfg.train_batch_size, num) for num in self.cfg.num_classes]
+        ecg_logits = [torch.randn(self.cfg.train_batch_size, num) for num in self.cfg.num_classes]
+        cxr_causal_logits = [torch.randn(self.cfg.train_batch_size, num) for num in self.cfg.num_causal]
+        ecg_causal_logits = [torch.randn(self.cfg.train_batch_size, num) for num in self.cfg.num_causal]
+        
+        ECG_feat, ECG_early_layer = self.backbone1(ECG_feat, return_layer=3)
+        CXR_feat, CXR_early_layer = self.backbone2(CXR_feat, return_layer=3)
+        # print(f"CXR_feat:{CXR_feat.shape}, ECG_feat:{ECG_feat.shape}")
+        # print(f"CXR early layer:{CXR_early_layer.shape}, ECG early layer:{ECG_early_layer.shape}")
+        # CXR_feat, ECG_feat, interm_feat1, interm_feat2 = self.backbone(CXR_feat, ECG_feat)
+        # ECG_feat = ECG_feat.permute(0, 2, 3, 1).contiguous()
+        # ECG_feat = ECG_feat.view(ECG_feat.size(0), -1, embedding_dim)
+
+        # CXR_feat = CXR_feat.permute(0, 2, 3, 1).contiguous()
+        # CXR_feat = CXR_feat.view(CXR_feat.size(0), -1, embedding_dim)
+        # pos_embed_ECG = self.pos_embedding(ECG_feat)
+        # pos_embed_CXR = self.pos_embedding(CXR_feat)
+        # ECG_output = pos_embed_ECG + ECG_feat
+        # CXR_output = pos_embed_CXR + CXR_feat
+
+        CXR_output = CXR_feat.permute(1, 0, 2)
+        ECG_output = ECG_feat.permute(1, 0, 2)
+        # print(f"CXR_output:{CXR_output.shape}, ECG_output:{ECG_output.shape}")
+
+        
+        h_coattn, A_coattn = self.coattn(ECG_output, CXR_output, CXR_output)
+
+        ### Opposite 
+        # h_coattn, A_coattn = self.coattn(CXR_output, ECG_output, ECG_output)
+        # print(f"h_coattn:{h_coattn.shape}, A_coattn:{A_coattn.shape}")
+        
+        # 4) Transformer Encoders
+        h_cxr_trans = self.cxr_transformer(h_coattn)      # (n_segments, B, d_model)
+        h_ecg_trans = self.ecg_transformer(ECG_output)# (n_segments, B, d_model)
+        # print(f"h_cxr_trans:{h_cxr_trans.shape}, h_ecg_trans:{h_ecg_trans.shape}")
+        ### Opposite 
+        # h_cxr_trans = self.cxr_transformer(CXR_output)      # (n_segments, B, d_model)
+        # h_ecg_trans = self.ecg_transformer(h_coattn)# (n_segments, B, d_model)
+    
+
+        
+        # 5) Attention Heads
+        #    Typically Attn_Net_Gated returns (attention_weights, aggregated_embedding)
+        #    Make sure shapes match how your attention head is implemented
+        A_cxr, H_cxr = self.cxr_attention_head(h_cxr_trans)   # might be (B, n_segments), (B, d_model)
+        A_ecg, H_ecg = self.ecg_attention_head(h_ecg_trans)
+        # print(f"A_cxr:{A_cxr.shape}, H_cxr:{H_cxr.shape}")
+        
+        # 6) Rho layers
+        H_cxr = self.cxr_rho(H_cxr)
+        H_ecg = self.ecg_rho(H_ecg)
+        H_cxr_ = H_cxr.mean(dim=0) 
+        H_ecg_ = H_ecg.mean(dim=0) 
+        cxr = self.mm1(H_cxr_)
+        ecg = self.mm1(H_ecg_)
+        # print(f"shape before fused H_cxr:{H_cxr.shape}, H_ecg:{H_ecg.shape}")
+
+        # 7) Fusion
+        if self.fusion == 'bilinear':
+            # e.g. Bilinear needs shape (1, B, d_model) etc. – depends on your implementation
+            fused = self.mm(H_cxr.unsqueeze(0), H_ecg.unsqueeze(0)).squeeze(0)
+        elif self.fusion == 'concat':
+            fused = torch.cat([H_cxr, H_ecg], dim=-1)
+            # print(f"fused 0:{fused.shape}")
+            fused = self.mm(fused)
+            # print(f"fused 1:{fused.shape}")
+        else:
+            fused = (H_cxr + H_ecg) / 2  # or any other simple scheme you like
+        
+        # 8) Classifier
+        # logits = self.classifier(fused)       # (256, B, n_classes)
+        fused = fused.mean(dim=0) 
+        # print(f"fused:{fused.shape}")
+
+        for index, classifier in enumerate(self.classifiers):
+            # Forward pass
+            logits = classifier(fused)  # shape: (batch_size, num_class)
+            # logits = logits.squeeze(dim=1)  # shape: (batch_size,)
+            main_logits[index] = logits
+            # print(f"main_logits:{main_logits[0].shape}")
+
+##### TO DO 
+        for index, classifier in enumerate(self.classifiers):
+            # Forward pass
+            logits_cxr = classifier(cxr)  # shape: (batch_size, num_class)
+            # logits = logits.squeeze(dim=1)  # shape: (batch_size,)
+            cxr_logits[index] = logits_cxr
+
+        for index, classifier in enumerate(self.classifiers):
+            # Forward pass
+            logits_ecg = classifier(ecg)  # shape: (batch_size, num_class)
+            # logits = logits.squeeze(dim=1)  # shape: (batch_size,)
+            ecg_logits[index] = logits_ecg
+
+##### TO DO 
+        for index, causal_classifier in enumerate(self.causal_classifiers):
+            # Forward pass
+            logits_causal_cxr = causal_classifier(cxr)  # shape: (batch_size, num_class)
+            # logits = logits.squeeze(dim=1)  # shape: (batch_size,)
+            cxr_causal_logits[index] = logits_causal_cxr
+
+        for index, causal_classifier in enumerate(self.causal_classifiers):
+            # Forward pass
+            logits_causal_ecg = causal_classifier(ecg)  # shape: (batch_size, num_class)
+            # logits = logits.squeeze(dim=1)  # shape: (batch_size,)
+            ecg_causal_logits[index] = logits_causal_ecg
+        
+        
+        # # Example survival heads
+        # Y_hat = torch.topk(logits, 1, dim=1)[1]
+        # hazards = torch.sigmoid(logits)
+        # S = torch.cumprod(1 - hazards, dim=1)
+        
+        # Return everything you need
+        attention_scores = {
+            'coattn': A_coattn,
+            'cxr': A_cxr,
+            'ecg': A_ecg
+        }
+        return attention_scores, main_logits, cxr_logits, ecg_logits, cxr_causal_logits, ecg_causal_logits, h_coattn, ECG_output
+
+
+class PositionalEncoding(nn.Module):
+    """
+    Implement the positional encoding (PE) function.
+    PE(pos, 2i)   = sin(pos/(10000^(2i/dmodel)))
+    PE(pos, 2i+1) = cos(pos/(10000^(2i/dmodel)))
+    """
+
+    def __init__(self, d_model, max_len=1000):
+        super(PositionalEncoding, self).__init__()
+        # Compute the positional encodings once in log space.
+        pe = torch.zeros(max_len, d_model, requires_grad=False)
+        position = torch.arange(0, max_len).unsqueeze(1).float()
+        div_term = torch.exp(torch.arange(0, d_model, 2).float() *
+                             -(math.log(10000.0) / d_model))
+        pe[:, 0::2] = torch.sin(position * div_term)
+        pe[:, 1::2] = torch.cos(position * div_term)
+        pe = pe.unsqueeze(0)
+        self.register_buffer('pe', pe)
+
+    def forward(self, input):
+        """
+        Args:
+            input: N x T x D
+        """
+        length = input.size(1)
+        return self.pe[:, :length]
+
+
+class MultiheadAttention(Module):
+    r"""Allows the model to jointly attend to information
+    from different representation subspaces.
+    See reference: Attention Is All You Need
+
+    .. math::
+        \text{MultiHead}(Q, K, V) = \text{Concat}(head_1,\dots,head_h)W^O
+        \text{where} head_i = \text{Attention}(QW_i^Q, KW_i^K, VW_i^V)
+
+    Args:
+        embed_dim: total dimension of the model.
+        num_heads: parallel attention heads.
+        dropout: a Dropout layer on attn_output_weights. Default: 0.0.
+        bias: add bias as module parameter. Default: True.
+        add_bias_kv: add bias to the key and value sequences at dim=0.
+        add_zero_attn: add a new batch of zeros to the key and
+                       value sequences at dim=1.
+        kdim: total number of features in key. Default: None.
+        vdim: total number of features in value. Default: None.
+
+        Note: if kdim and vdim are None, they will be set to embed_dim such that
+        query, key, and value have the same number of features.
+
+    Examples::
+
+        >>> multihead_attn = nn.MultiheadAttention(embed_dim, num_heads)
+        >>> attn_output, attn_output_weights = multihead_attn(query, key, value)
+    """
+
+    def __init__(self, embed_dim, num_heads, dropout=0., bias=True, add_bias_kv=False, add_zero_attn=False, kdim=None, vdim=None):
+        super(MultiheadAttention, self).__init__()
+        self.embed_dim = embed_dim
+        self.kdim = kdim if kdim is not None else embed_dim
+        self.vdim = vdim if vdim is not None else embed_dim
+        self._qkv_same_embed_dim = self.kdim == embed_dim and self.vdim == embed_dim
+
+        self.num_heads = num_heads
+        self.dropout = dropout
+        self.head_dim = embed_dim // num_heads
+        assert self.head_dim * num_heads == self.embed_dim, "embed_dim must be divisible by num_heads"
+
+        if self._qkv_same_embed_dim is False:
+            self.q_proj_weight = Parameter(torch.Tensor(embed_dim, embed_dim))
+            self.k_proj_weight = Parameter(torch.Tensor(embed_dim, self.kdim))
+            self.v_proj_weight = Parameter(torch.Tensor(embed_dim, self.vdim))
+            self.register_parameter('in_proj_weight', None)
+        else:
+            self.in_proj_weight = Parameter(torch.empty(3 * embed_dim, embed_dim))
+            self.register_parameter('q_proj_weight', None)
+            self.register_parameter('k_proj_weight', None)
+            self.register_parameter('v_proj_weight', None)
+
+        if bias:
+            self.in_proj_bias = Parameter(torch.empty(3 * embed_dim))
+        else:
+            self.register_parameter('in_proj_bias', None)
+        # self.out_proj = _LinearWithBias(embed_dim, embed_dim)
+        self.out_proj = nn.Linear(embed_dim, embed_dim, bias=True)
+
+        if add_bias_kv:
+            self.bias_k = Parameter(torch.empty(1, 1, embed_dim))
+            self.bias_v = Parameter(torch.empty(1, 1, embed_dim))
+        else:
+            self.bias_k = self.bias_v = None
+
+        self.add_zero_attn = add_zero_attn
+
+        self._reset_parameters()
+
+    def _reset_parameters(self):
+        if self._qkv_same_embed_dim:
+            xavier_uniform_(self.in_proj_weight)
+        else:
+            xavier_uniform_(self.q_proj_weight)
+            xavier_uniform_(self.k_proj_weight)
+            xavier_uniform_(self.v_proj_weight)
+
+        if self.in_proj_bias is not None:
+            constant_(self.in_proj_bias, 0.)
+            constant_(self.out_proj.bias, 0.)
+        if self.bias_k is not None:
+            xavier_normal_(self.bias_k)
+        if self.bias_v is not None:
+            xavier_normal_(self.bias_v)
+
+    def __setstate__(self, state):
+        # Support loading old MultiheadAttention checkpoints generated by v1.1.0
+        if '_qkv_same_embed_dim' not in state:
+            state['_qkv_same_embed_dim'] = True
+
+        super(MultiheadAttention, self).__setstate__(state)
+
+    def forward(self, query, key, value, key_padding_mask=None,
+                need_weights=True, need_raw=True, attn_mask=None):
+        r"""
+    Args:
+        query, key, value: map a query and a set of key-value pairs to an output.
+            See "Attention Is All You Need" for more details.
+        key_padding_mask: if provided, specified padding elements in the key will
+            be ignored by the attention. When given a binary mask and a value is True,
+            the corresponding value on the attention layer will be ignored. When given
+            a byte mask and a value is non-zero, the corresponding value on the attention
+            layer will be ignored
+        need_weights: output attn_output_weights.
+        attn_mask: 2D or 3D mask that prevents attention to certain positions. A 2D mask will be broadcasted for all
+            the batches while a 3D mask allows to specify a different mask for the entries of each batch.
+
+    Shape:
+        - Inputs:
+        - query: :math:`(L, N, E)` where L is the target sequence length, N is the batch size, E is
+          the embedding dimension.
+        - key: :math:`(S, N, E)`, where S is the source sequence length, N is the batch size, E is
+          the embedding dimension.
+        - value: :math:`(S, N, E)` where S is the source sequence length, N is the batch size, E is
+          the embedding dimension.
+        - key_padding_mask: :math:`(N, S)` where N is the batch size, S is the source sequence length.
+          If a ByteTensor is provided, the non-zero positions will be ignored while the position
+          with the zero positions will be unchanged. If a BoolTensor is provided, the positions with the
+          value of ``True`` will be ignored while the position with the value of ``False`` will be unchanged.
+        - attn_mask: 2D mask :math:`(L, S)` where L is the target sequence length, S is the source sequence length.
+          3D mask :math:`(N*num_heads, L, S)` where N is the batch size, L is the target sequence length,
+          S is the source sequence length. attn_mask ensure that position i is allowed to attend the unmasked
+          positions. If a ByteTensor is provided, the non-zero positions are not allowed to attend
+          while the zero positions will be unchanged. If a BoolTensor is provided, positions with ``True``
+          is not allowed to attend while ``False`` values will be unchanged. If a FloatTensor
+          is provided, it will be added to the attention weight.
+
+        - Outputs:
+        - attn_output: :math:`(L, N, E)` where L is the target sequence length, N is the batch size,
+          E is the embedding dimension.
+        - attn_output_weights: :math:`(N, L, S)` where N is the batch size,
+          L is the target sequence length, S is the source sequence length.
+        """
+        if not self._qkv_same_embed_dim:
+            return multi_head_attention_forward(
+                query, key, value, self.embed_dim, self.num_heads,
+                self.in_proj_weight, self.in_proj_bias,
+                self.bias_k, self.bias_v, self.add_zero_attn,
+                self.dropout, self.out_proj.weight, self.out_proj.bias,
+                training=self.training,
+                key_padding_mask=key_padding_mask, need_weights=need_weights, need_raw=need_raw,
+                attn_mask=attn_mask, use_separate_proj_weight=True,
+                q_proj_weight=self.q_proj_weight, k_proj_weight=self.k_proj_weight,
+                v_proj_weight=self.v_proj_weight)
+        else:
+            return multi_head_attention_forward(
+                query, key, value, self.embed_dim, self.num_heads,
+                self.in_proj_weight, self.in_proj_bias,
+                self.bias_k, self.bias_v, self.add_zero_attn,
+                self.dropout, self.out_proj.weight, self.out_proj.bias,
+                training=self.training,
+                key_padding_mask=key_padding_mask, need_weights=need_weights, need_raw=need_raw,
+                attn_mask=attn_mask)
+
+
+###
+# ========== Modifying PyTorch Functionalities ======================
+###
+from torch.nn.functional import *
+
+def multi_head_attention_forward(
+    query: Tensor,
+    key: Tensor,
+    value: Tensor,
+    embed_dim_to_check: int,
+    num_heads: int,
+    in_proj_weight: Tensor,
+    in_proj_bias: Tensor,
+    bias_k: Optional[Tensor],
+    bias_v: Optional[Tensor],
+    add_zero_attn: bool,
+    dropout_p: float,
+    out_proj_weight: Tensor,
+    out_proj_bias: Tensor,
+    training: bool = True,
+    key_padding_mask: Optional[Tensor] = None,
+    need_weights: bool = True,
+    need_raw: bool = True,
+    attn_mask: Optional[Tensor] = None,
+    use_separate_proj_weight: bool = False,
+    q_proj_weight: Optional[Tensor] = None,
+    k_proj_weight: Optional[Tensor] = None,
+    v_proj_weight: Optional[Tensor] = None,
+    static_k: Optional[Tensor] = None,
+    static_v: Optional[Tensor] = None,
+):
+    r"""
+    Args:
+        query, key, value: map a query and a set of key-value pairs to an output.
+            See "Attention Is All You Need" for more details.
+        embed_dim_to_check: total dimension of the model.
+        num_heads: parallel attention heads.
+        in_proj_weight, in_proj_bias: input projection weight and bias.
+        bias_k, bias_v: bias of the key and value sequences to be added at dim=0.
+        add_zero_attn: add a new batch of zeros to the key and
+                       value sequences at dim=1.
+        dropout_p: probability of an element to be zeroed.
+        out_proj_weight, out_proj_bias: the output projection weight and bias.
+        training: apply dropout if is ``True``.
+        key_padding_mask: if provided, specified padding elements in the key will
+            be ignored by the attention. This is an binary mask. When the value is True,
+            the corresponding value on the attention layer will be filled with -inf.
+        need_weights: output attn_output_weights.
+        attn_mask: 2D or 3D mask that prevents attention to certain positions. A 2D mask will be broadcasted for all
+            the batches while a 3D mask allows to specify a different mask for the entries of each batch.
+        use_separate_proj_weight: the function accept the proj. weights for query, key,
+            and value in different forms. If false, in_proj_weight will be used, which is
+            a combination of q_proj_weight, k_proj_weight, v_proj_weight.
+        q_proj_weight, k_proj_weight, v_proj_weight, in_proj_bias: input projection weight and bias.
+        static_k, static_v: static key and value used for attention operators.
+    Shape:
+        Inputs:
+        - query: :math:`(L, N, E)` where L is the target sequence length, N is the batch size, E is
+          the embedding dimension.
+        - key: :math:`(S, N, E)`, where S is the source sequence length, N is the batch size, E is
+          the embedding dimension.
+        - value: :math:`(S, N, E)` where S is the source sequence length, N is the batch size, E is
+          the embedding dimension.
+        - key_padding_mask: :math:`(N, S)` where N is the batch size, S is the source sequence length.
+          If a ByteTensor is provided, the non-zero positions will be ignored while the zero positions
+          will be unchanged. If a BoolTensor is provided, the positions with the
+          value of ``True`` will be ignored while the position with the value of ``False`` will be unchanged.
+        - attn_mask: 2D mask :math:`(L, S)` where L is the target sequence length, S is the source sequence length.
+          3D mask :math:`(N*num_heads, L, S)` where N is the batch size, L is the target sequence length,
+          S is the source sequence length. attn_mask ensures that position i is allowed to attend the unmasked
+          positions. If a ByteTensor is provided, the non-zero positions are not allowed to attend
+          while the zero positions will be unchanged. If a BoolTensor is provided, positions with ``True``
+          are not allowed to attend while ``False`` values will be unchanged. If a FloatTensor
+          is provided, it will be added to the attention weight.
+        - static_k: :math:`(N*num_heads, S, E/num_heads)`, where S is the source sequence length,
+          N is the batch size, E is the embedding dimension. E/num_heads is the head dimension.
+        - static_v: :math:`(N*num_heads, S, E/num_heads)`, where S is the source sequence length,
+          N is the batch size, E is the embedding dimension. E/num_heads is the head dimension.
+        Outputs:
+        - attn_output: :math:`(L, N, E)` where L is the target sequence length, N is the batch size,
+          E is the embedding dimension.
+        - attn_output_weights: :math:`(N, L, S)` where N is the batch size,
+          L is the target sequence length, S is the source sequence length.
+    """
+    tens_ops = (query, key, value, in_proj_weight, in_proj_bias, bias_k, bias_v, out_proj_weight, out_proj_bias)
+    if has_torch_function(tens_ops):
+        return handle_torch_function(
+            multi_head_attention_forward,
+            tens_ops,
+            query,
+            key,
+            value,
+            embed_dim_to_check,
+            num_heads,
+            in_proj_weight,
+            in_proj_bias,
+            bias_k,
+            bias_v,
+            add_zero_attn,
+            dropout_p,
+            out_proj_weight,
+            out_proj_bias,
+            training=training,
+            key_padding_mask=key_padding_mask,
+            need_weights=need_weights,
+            need_raw=need_raw,
+            attn_mask=attn_mask,
+            use_separate_proj_weight=use_separate_proj_weight,
+            q_proj_weight=q_proj_weight,
+            k_proj_weight=k_proj_weight,
+            v_proj_weight=v_proj_weight,
+            static_k=static_k,
+            static_v=static_v,
+        )
+    tgt_len, bsz, embed_dim = query.size()
+    assert embed_dim == embed_dim_to_check
+    # allow MHA to have different sizes for the feature dimension
+    assert key.size(0) == value.size(0) and key.size(1) == value.size(1)
+
+    head_dim = embed_dim // num_heads
+    assert head_dim * num_heads == embed_dim, "embed_dim must be divisible by num_heads"
+    scaling = float(head_dim) ** -0.5
+
+    if not use_separate_proj_weight:
+        if (query is key or torch.equal(query, key)) and (key is value or torch.equal(key, value)):
+            # self-attention
+            q, k, v = linear(query, in_proj_weight, in_proj_bias).chunk(3, dim=-1)
+
+        elif key is value or torch.equal(key, value):
+            # encoder-decoder attention
+            # This is inline in_proj function with in_proj_weight and in_proj_bias
+            _b = in_proj_bias
+            _start = 0
+            _end = embed_dim
+            _w = in_proj_weight[_start:_end, :]
+            if _b is not None:
+                _b = _b[_start:_end]
+            q = linear(query, _w, _b)
+
+            if key is None:
+                assert value is None
+                k = None
+                v = None
+            else:
+
+                # This is inline in_proj function with in_proj_weight and in_proj_bias
+                _b = in_proj_bias
+                _start = embed_dim
+                _end = None
+                _w = in_proj_weight[_start:, :]
+                if _b is not None:
+                    _b = _b[_start:]
+                k, v = linear(key, _w, _b).chunk(2, dim=-1)
+
+        else:
+            # This is inline in_proj function with in_proj_weight and in_proj_bias
+            _b = in_proj_bias
+            _start = 0
+            _end = embed_dim
+            _w = in_proj_weight[_start:_end, :]
+            if _b is not None:
+                _b = _b[_start:_end]
+            q = linear(query, _w, _b)
+
+            # This is inline in_proj function with in_proj_weight and in_proj_bias
+            _b = in_proj_bias
+            _start = embed_dim
+            _end = embed_dim * 2
+            _w = in_proj_weight[_start:_end, :]
+            if _b is not None:
+                _b = _b[_start:_end]
+            k = linear(key, _w, _b)
+
+            # This is inline in_proj function with in_proj_weight and in_proj_bias
+            _b = in_proj_bias
+            _start = embed_dim * 2
+            _end = None
+            _w = in_proj_weight[_start:, :]
+            if _b is not None:
+                _b = _b[_start:]
+            v = linear(value, _w, _b)
+    else:
+        q_proj_weight_non_opt = torch.jit._unwrap_optional(q_proj_weight)
+        len1, len2 = q_proj_weight_non_opt.size()
+        assert len1 == embed_dim and len2 == query.size(-1)
+
+        k_proj_weight_non_opt = torch.jit._unwrap_optional(k_proj_weight)
+        len1, len2 = k_proj_weight_non_opt.size()
+        assert len1 == embed_dim and len2 == key.size(-1)
+
+        v_proj_weight_non_opt = torch.jit._unwrap_optional(v_proj_weight)
+        len1, len2 = v_proj_weight_non_opt.size()
+        assert len1 == embed_dim and len2 == value.size(-1)
+
+        if in_proj_bias is not None:
+            q = linear(query, q_proj_weight_non_opt, in_proj_bias[0:embed_dim])
+            k = linear(key, k_proj_weight_non_opt, in_proj_bias[embed_dim : (embed_dim * 2)])
+            v = linear(value, v_proj_weight_non_opt, in_proj_bias[(embed_dim * 2) :])
+        else:
+            q = linear(query, q_proj_weight_non_opt, in_proj_bias)
+            k = linear(key, k_proj_weight_non_opt, in_proj_bias)
+            v = linear(value, v_proj_weight_non_opt, in_proj_bias)
+    q = q * scaling
+
+    if attn_mask is not None:
+        assert (
+            attn_mask.dtype == torch.float32
+            or attn_mask.dtype == torch.float64
+            or attn_mask.dtype == torch.float16
+            or attn_mask.dtype == torch.uint8
+            or attn_mask.dtype == torch.bool
+        ), "Only float, byte, and bool types are supported for attn_mask, not {}".format(attn_mask.dtype)
+        if attn_mask.dtype == torch.uint8:
+            warnings.warn("Byte tensor for attn_mask in nn.MultiheadAttention is deprecated. Use bool tensor instead.")
+            attn_mask = attn_mask.to(torch.bool)
+
+        if attn_mask.dim() == 2:
+            attn_mask = attn_mask.unsqueeze(0)
+            if list(attn_mask.size()) != [1, query.size(0), key.size(0)]:
+                raise RuntimeError("The size of the 2D attn_mask is not correct.")
+        elif attn_mask.dim() == 3:
+            if list(attn_mask.size()) != [bsz * num_heads, query.size(0), key.size(0)]:
+                raise RuntimeError("The size of the 3D attn_mask is not correct.")
+        else:
+            raise RuntimeError("attn_mask's dimension {} is not supported".format(attn_mask.dim()))
+        # attn_mask's dim is 3 now.
+
+    # convert ByteTensor key_padding_mask to bool
+    if key_padding_mask is not None and key_padding_mask.dtype == torch.uint8:
+        warnings.warn(
+            "Byte tensor for key_padding_mask in nn.MultiheadAttention is deprecated. Use bool tensor instead."
+        )
+        key_padding_mask = key_padding_mask.to(torch.bool)
+
+    if bias_k is not None and bias_v is not None:
+        if static_k is None and static_v is None:
+            k = torch.cat([k, bias_k.repeat(1, bsz, 1)])
+            v = torch.cat([v, bias_v.repeat(1, bsz, 1)])
+            if attn_mask is not None:
+                attn_mask = pad(attn_mask, (0, 1))
+            if key_padding_mask is not None:
+                key_padding_mask = pad(key_padding_mask, (0, 1))
+        else:
+            assert static_k is None, "bias cannot be added to static key."
+            assert static_v is None, "bias cannot be added to static value."
+    else:
+        assert bias_k is None
+        assert bias_v is None
+
+    q = q.contiguous().view(tgt_len, bsz * num_heads, head_dim).transpose(0, 1)
+    if k is not None:
+        k = k.contiguous().view(-1, bsz * num_heads, head_dim).transpose(0, 1)
+    if v is not None:
+        v = v.contiguous().view(-1, bsz * num_heads, head_dim).transpose(0, 1)
+
+    if static_k is not None:
+        assert static_k.size(0) == bsz * num_heads
+        assert static_k.size(2) == head_dim
+        k = static_k
+
+    if static_v is not None:
+        assert static_v.size(0) == bsz * num_heads
+        assert static_v.size(2) == head_dim
+        v = static_v
+
+    src_len = k.size(1)
+
+    if key_padding_mask is not None:
+        assert key_padding_mask.size(0) == bsz
+        assert key_padding_mask.size(1) == src_len
+
+    if add_zero_attn:
+        src_len += 1
+        k = torch.cat([k, torch.zeros((k.size(0), 1) + k.size()[2:], dtype=k.dtype, device=k.device)], dim=1)
+        v = torch.cat([v, torch.zeros((v.size(0), 1) + v.size()[2:], dtype=v.dtype, device=v.device)], dim=1)
+        if attn_mask is not None:
+            attn_mask = pad(attn_mask, (0, 1))
+        if key_padding_mask is not None:
+            key_padding_mask = pad(key_padding_mask, (0, 1))
+
+    attn_output_weights = torch.bmm(q, k.transpose(1, 2))
+    assert list(attn_output_weights.size()) == [bsz * num_heads, tgt_len, src_len]
+
+    if attn_mask is not None:
+        if attn_mask.dtype == torch.bool:
+            attn_output_weights.masked_fill_(attn_mask, float("-inf"))
+        else:
+            attn_output_weights += attn_mask
+
+    if key_padding_mask is not None:
+        attn_output_weights = attn_output_weights.view(bsz, num_heads, tgt_len, src_len)
+        attn_output_weights = attn_output_weights.masked_fill(
+            key_padding_mask.unsqueeze(1).unsqueeze(2),
+            float("-inf"),
+        )
+        attn_output_weights = attn_output_weights.view(bsz * num_heads, tgt_len, src_len)
+    
+    attn_output_weights_raw = attn_output_weights
+    attn_output_weights = softmax(attn_output_weights, dim=-1)
+    attn_output_weights = dropout(attn_output_weights, p=dropout_p, training=training)
+
+    attn_output = torch.bmm(attn_output_weights, v)
+    assert list(attn_output.size()) == [bsz * num_heads, tgt_len, head_dim]
+    attn_output = attn_output.transpose(0, 1).contiguous().view(tgt_len, bsz, embed_dim)
+    attn_output = linear(attn_output, out_proj_weight, out_proj_bias)
+    
+    if need_weights:
+        if need_raw:
+            
+            attn_output_weights_raw = attn_output_weights_raw.view(bsz, num_heads, tgt_len, src_len)
+            return attn_output,attn_output_weights_raw
+            
+            #attn_output_weights = attn_output_weights.view(bsz, num_heads, tgt_len, src_len)
+            #return attn_output, attn_output_weights.sum(dim=1) / num_heads, attn_output_weights_raw, attn_output_weights_raw.sum(dim=1) / num_heads
+        else:
+            # average attention weights over heads
+            attn_output_weights = attn_output_weights.view(bsz, num_heads, tgt_len, src_len)
+            return attn_output, attn_output_weights.sum(dim=1) / num_heads
+    else:
+        return attn_output, None
