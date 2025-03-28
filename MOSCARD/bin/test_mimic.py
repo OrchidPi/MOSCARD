@@ -27,7 +27,7 @@ from model.coatt_MCAT import MCAT
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', default='./', type=str, help="Path to the trained models")
-    parser.add_argument('--in_csv_path', default='/media/Datacenter_storage/jialu/003/mimic_ECG_view_images/mimic_test_modify.csv', type=str, help="Path to the input image path in csv")
+    parser.add_argument('--in_csv_path', default='examples/mimic_test.csv', type=str, help="Path to the input image path in csv")
     parser.add_argument('--test_model', default='Baseline', type=str, help="Test model name [Baseline, Conf, Causal, CaConf]")
     parser.add_argument('--out_csv_path', default='test/mimic_test.csv', type=str, help="Path to the output predictions in csv")
     parser.add_argument('--num_workers', default=8, type=int, help="Number of workers for each data loader")
@@ -177,7 +177,7 @@ def Find_Optimal_Cutoff(target, predicted):
 
 
 def run(args):
-    with open(args.model_path + 'cfg.json') as f:
+    with open(args.model_path + './MOSCARD/config/config.json') as f:
         cfg = edict(json.load(f))
 
     device_ids = list(map(int, args.device_ids.split(',')))
@@ -189,16 +189,16 @@ def run(args):
 
     if args.test_model == 'Baseline':
         model = MCAT(cfg)
-        ckpt_path = os.path.join(args.model_path, 'Baseline.ckpt')
+        ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/Baseline.ckpt')
     elif args.test_model == 'Conf':
         model = MCAT(cfg)
-        ckpt_path = os.path.join(args.model_path, 'Conf.ckpt')
+        ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/Conf.ckpt')
     elif args.test_model == 'Causal':
         model = MCAT(cfg)
-        ckpt_path = os.path.join(args.model_path, 'Causal.ckpt')
+        ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/Causal.ckpt')
     elif args.test_model == 'CaConf':
         model = MCAT(cfg)
-        ckpt_path = os.path.join(args.model_path, 'CaConf.ckpt')
+        ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/CaConf.ckpt')
     
     
     model = DataParallel(model, device_ids=device_ids).to(device).eval()
