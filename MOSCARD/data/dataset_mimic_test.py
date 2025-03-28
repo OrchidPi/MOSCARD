@@ -11,10 +11,6 @@ from data.utils import transform
 from torchvision import transforms as tsfm
 np.random.seed(0)
 import sys 
-# sys.path.append('/media/Datacenter_storage/')
-# Get image directories from environment variables
-# PNG_DIR = os.getenv("PNG_DIR", "/app/pngs")  # Default to /app/pngs if not set
-# ECG_DIR = os.getenv("ECG_DIR", "/app/ecgs")  # Default to /app/ecgs if not set
 
 
 class ImageDataset_Mayo_bimodal(Dataset):
@@ -28,7 +24,7 @@ class ImageDataset_Mayo_bimodal(Dataset):
         self._labels = []
         self._mode = mode
         # Define the indices of the columns you want to extract
-        label_columns_indices = [-4,-3,-2,-1]  # MACE_6mo, MACE_1yr, MACE_2yr, MACE_5yr
+        label_columns_indices = [-1,-1,-1,-1]  # MACE_6mo, MACE_1yr, MACE_2yr, MACE_5yr
 
       
 
