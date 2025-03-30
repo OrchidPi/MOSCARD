@@ -21,7 +21,7 @@ from tqdm import tqdm
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
 
 from data.dataset_mimic_test import ImageDataset_bimodal  
-from model.coatt_MCAT import MCAT
+from model.MOSCARD import coatt
 
 
 def get_args():
