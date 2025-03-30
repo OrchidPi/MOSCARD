@@ -1,6 +1,6 @@
 {
-    "train_csv": "/home/m313232/Multimodal_master/data/train.csv",
-    "dev_csv": "/home/m313232/Multimodal_master/data/test.csv",
+    "train_csv": "examples/train.csv",
+    "dev_csv": "examples/mimic_test.csv",
     "backbone": "densenet121",
     "num_heads": 8,
     "width": 512,
@@ -61,6 +61,5 @@
     "hidden_size_linear": 512,
     "hidden_size_itm": 512,
     "hidden_size_input": 512,
-    "itm_head": "/media/Datacenter_storage/jialu/002/MMCAN/pheme/weights/itm_head.pth",
     "max_len": 256
 }
