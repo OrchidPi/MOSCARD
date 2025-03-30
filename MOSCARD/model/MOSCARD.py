@@ -11,8 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from model.model_utils import *
-from MedCLIP.medclip.modeling_medclip import MedCLIPModel, PromptClassifier, MedCLIPVisionModel, MedCLIPVisionModelViT
-# from medclip import MedCLIPModel, MedCLIPVisionModelViT, MedCLIPVisionModel
+from MedCLIP.medclip.modeling_medclip import MedCLIPVisionModelViT
 
 import torch
 from torch import Tensor
@@ -23,10 +22,7 @@ from torch.nn.init import xavier_normal_
 from torch.nn.parameter import Parameter
 from torch.nn import Module
 
-###########################
-### MCAT Implementation ###
-###########################
-class MCAT(nn.Module):
+class coatt(nn.Module):
     def __init__(self, 
                  cfg,
                  n_classes=4,
@@ -34,7 +30,7 @@ class MCAT(nn.Module):
                  model_size_ecg='small',
                  fusion='concat',
                  dropout=0.25):
-        super(MCAT, self).__init__()
+        super(coatt, self).__init__()
         #### Example size dicts: adapt as you see fit
         self.size_dict_cxr = {"small": [256, 256], "big": [512, 384]}
         self.size_dict_ecg = {"small": [256, 256], "big": [512, 384]}
@@ -65,14 +61,12 @@ class MCAT(nn.Module):
         )
         self.ecg_transformer = nn.TransformerEncoder(encoder_layer_ecg, num_layers=2)
         
-        # Example attention heads: replace Attn_Net_Gated with your own if needed
         self.cxr_attention_head = Attn_Net_Gated(L=d_model, D=d_model, 
                                                  dropout=dropout, n_classes=1)
         self.ecg_attention_head = Attn_Net_Gated(L=d_model, D=d_model, 
                                                  dropout=dropout, n_classes=1)
         
 
-        # Example MLP after attention
         self.cxr_rho = nn.Sequential(
             nn.Linear(d_model, int(d_model/2)),
             nn.ReLU(),
@@ -106,7 +100,7 @@ class MCAT(nn.Module):
                 nn.ReLU()
             )
         
-        #### Classifier (e.g., for survival)
+
         ### Fused features
         self.classifiers = nn.ModuleList()
         for idx, num_class in enumerate(self.cfg.num_classes):
@@ -133,48 +127,21 @@ class MCAT(nn.Module):
         
         ECG_feat, ECG_early_layer = self.backbone1(ECG_feat, return_layer=3)
         CXR_feat, CXR_early_layer = self.backbone2(CXR_feat, return_layer=3)
-        # print(f"CXR_feat:{CXR_feat.shape}, ECG_feat:{ECG_feat.shape}")
-        # print(f"CXR early layer:{CXR_early_layer.shape}, ECG early layer:{ECG_early_layer.shape}")
-        # CXR_feat, ECG_feat, interm_feat1, interm_feat2 = self.backbone(CXR_feat, ECG_feat)
-        # ECG_feat = ECG_feat.permute(0, 2, 3, 1).contiguous()
-        # ECG_feat = ECG_feat.view(ECG_feat.size(0), -1, embedding_dim)
-
-        # CXR_feat = CXR_feat.permute(0, 2, 3, 1).contiguous()
-        # CXR_feat = CXR_feat.view(CXR_feat.size(0), -1, embedding_dim)
-        # pos_embed_ECG = self.pos_embedding(ECG_feat)
-        # pos_embed_CXR = self.pos_embedding(CXR_feat)
-        # ECG_output = pos_embed_ECG + ECG_feat
-        # CXR_output = pos_embed_CXR + CXR_feat
 
         CXR_output = CXR_feat.permute(1, 0, 2)
         ECG_output = ECG_feat.permute(1, 0, 2)
         # print(f"CXR_output:{CXR_output.shape}, ECG_output:{ECG_output.shape}")
-
-        
+   
         h_coattn, A_coattn = self.coattn(ECG_output, CXR_output, CXR_output)
 
-        ### Opposite 
-        # h_coattn, A_coattn = self.coattn(CXR_output, ECG_output, ECG_output)
-        # print(f"h_coattn:{h_coattn.shape}, A_coattn:{A_coattn.shape}")
-        
-        # 4) Transformer Encoders
         h_cxr_trans = self.cxr_transformer(h_coattn)      # (n_segments, B, d_model)
         h_ecg_trans = self.ecg_transformer(ECG_output)# (n_segments, B, d_model)
         # print(f"h_cxr_trans:{h_cxr_trans.shape}, h_ecg_trans:{h_ecg_trans.shape}")
-        ### Opposite 
-        # h_cxr_trans = self.cxr_transformer(CXR_output)      # (n_segments, B, d_model)
-        # h_ecg_trans = self.ecg_transformer(h_coattn)# (n_segments, B, d_model)
-    
 
-        
-        # 5) Attention Heads
-        #    Typically Attn_Net_Gated returns (attention_weights, aggregated_embedding)
-        #    Make sure shapes match how your attention head is implemented
         A_cxr, H_cxr = self.cxr_attention_head(h_cxr_trans)   # might be (B, n_segments), (B, d_model)
         A_ecg, H_ecg = self.ecg_attention_head(h_ecg_trans)
         # print(f"A_cxr:{A_cxr.shape}, H_cxr:{H_cxr.shape}")
         
-        # 6) Rho layers
         H_cxr = self.cxr_rho(H_cxr)
         H_ecg = self.ecg_rho(H_ecg)
         H_cxr_ = H_cxr.mean(dim=0) 
@@ -183,7 +150,7 @@ class MCAT(nn.Module):
         ecg = self.mm1(H_ecg_)
         # print(f"shape before fused H_cxr:{H_cxr.shape}, H_ecg:{H_ecg.shape}")
 
-        # 7) Fusion
+        # Fusion
         if self.fusion == 'bilinear':
             # e.g. Bilinear needs shape (1, B, d_model) etc. – depends on your implementation
             fused = self.mm(H_cxr.unsqueeze(0), H_ecg.unsqueeze(0)).squeeze(0)
@@ -195,19 +162,16 @@ class MCAT(nn.Module):
         else:
             fused = (H_cxr + H_ecg) / 2  # or any other simple scheme you like
         
-        # 8) Classifier
-        # logits = self.classifier(fused)       # (256, B, n_classes)
         fused = fused.mean(dim=0) 
         # print(f"fused:{fused.shape}")
 
         for index, classifier in enumerate(self.classifiers):
             # Forward pass
             logits = classifier(fused)  # shape: (batch_size, num_class)
-            # logits = logits.squeeze(dim=1)  # shape: (batch_size,)
             main_logits[index] = logits
             # print(f"main_logits:{main_logits[0].shape}")
 
-##### TO DO 
+
         for index, classifier in enumerate(self.classifiers):
             # Forward pass
             logits_cxr = classifier(cxr)  # shape: (batch_size, num_class)
@@ -220,7 +184,7 @@ class MCAT(nn.Module):
             # logits = logits.squeeze(dim=1)  # shape: (batch_size,)
             ecg_logits[index] = logits_ecg
 
-##### TO DO 
+
         for index, causal_classifier in enumerate(self.causal_classifiers):
             # Forward pass
             logits_causal_cxr = causal_classifier(cxr)  # shape: (batch_size, num_class)
@@ -234,12 +198,6 @@ class MCAT(nn.Module):
             ecg_causal_logits[index] = logits_causal_ecg
         
         
-        # # Example survival heads
-        # Y_hat = torch.topk(logits, 1, dim=1)[1]
-        # hazards = torch.sigmoid(logits)
-        # S = torch.cumprod(1 - hazards, dim=1)
-        
-        # Return everything you need
         attention_scores = {
             'coattn': A_coattn,
             'cxr': A_cxr,
