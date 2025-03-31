@@ -24,6 +24,7 @@ Ensure all necessary packages are installed by running:
 
   - MOSCARD training
     - Train follow the on-screen prompt to choose a mode (1–4): `bash MOSCARD/scrpits/train.sh`
+      
     | Option | Mode Name | Description |
     |--------|-----------|-------------|
     | 1 | Baseline | Trains a baseline multimodal model using pre-trained ECG and CXR backbones without de-confounding and causal reasoning. |
