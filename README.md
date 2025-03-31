@@ -17,7 +17,27 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
 * Model Training
 Ensure all necessary packages are installed by running:
 `pip install -r requirements.txt`
-> bash 
+> Single modality
+>> CXR single modality Baseline : `bash CXR/scrpits/train.sh`
+>> ECG single modality Baseline : `bash ECG/scrpits/train.sh`
+> Proposed Multimodal MOSCARD
+>> `bash MOSCARD/scrpits/train.sh`
+>> ### Mode Options
+
+| Option | Mode Name   | Description                                                                 |
+|--------|-------------|-----------------------------------------------------------------------------|
+| 1      | Baseline    | Trains a baseline multimodal model using pre-trained ECG and CXR backbones without de-confouding and causal reasoning. |
+| 2      | Causal      | Trains the model with causal reasoning mechanisms based on Baseline.                   |
+| 3      | Conf        | Trains the single baseline model using backbones that were trained with de-confounder strategies. |
+| 4      | CaConf      | Trains the causal model using de-confounding backbones.                    |
+
+
+> Baseline Debiased model : `python bin/train_debiased.py  config/Mayo.json logdir/logdir_debiased --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
+
+> MOSCARD : `python bin/train_pretrained.py  config/Mayo.json logdir/logdir_pretrain --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
+
+> Baseline Debiased model : `python bin/train_debiased.py  config/Mayo.json logdir/logdir_debiased --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
+
 >> 
 >> Final Causal+Confounder model (Baseline Causal model+Baseline Confounder model with causal feature concat) : `python bin/train_causalconf.py config/Mayo.json logdir/logdir_causalconf --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
 
