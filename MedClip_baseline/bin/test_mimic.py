@@ -21,17 +21,17 @@ import random
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
 
-from data.dataset_mimic_test import ImageDataset_Mayo_bimodal # noqa
-from model.causal_conf_bimodal_crossattention_noconcat import ConfClassifier
+from data.dataset_mimic_test import ImageDataset_bimodal # noqa
+from model.medclip_crossattention import Classifier
 def get_args():
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--model_path', default='./', metavar='MODEL_PATH',
                         type=str, help="Path to the trained models")
-    parser.add_argument('--in_csv_path', default='mimic_test_modify.csv', metavar='IN_CSV_PATH',
+    parser.add_argument('--in_csv_path', default='mimic_test.csv', metavar='IN_CSV_PATH',
                         type=str, help="Path to the input image path in csv")
-    parser.add_argument('--test_model', default='conf', metavar='TEST_MODEL',
-                        type=str, help="Test model name [conf, causal_conf]")
+    parser.add_argument('--test_model', default='Combined', metavar='TEST_MODEL',
+                        type=str, help="Test model name [Combined, CXR, ECG]")
     parser.add_argument('--out_csv_path', default='test/mimic.csv',
                         metavar='OUT_CSV_PATH', type=str,
                         help="Path to the ouput predictions in csv")
@@ -194,14 +194,14 @@ def run(args):
     device = torch.device('cuda:{}'.format(device_ids[0]))
     
 
-    model = ConfClassifier(cfg)
-    ckpt_path = os.path.join(args.model_path, 'best2.ckpt')
+    model = Classifier(cfg)
+    ckpt_path = os.path.join(args.model_path, 'MedClip_crossattention.ckpt')
     model = DataParallel(model, device_ids=device_ids).to(device).eval()
     ckpt = torch.load(ckpt_path, map_location=device)
     model.module.load_state_dict(ckpt['state_dict'], strict=False)
 
     dataloader_test = DataLoader(
-        ImageDataset_Mayo_bimodal(args.in_csv_path, cfg, mode='test'),
+        ImageDataset_bimodal(args.in_csv_path, cfg, mode='test'),
         batch_size=cfg.dev_batch_size, num_workers=args.num_workers,
         drop_last=False, shuffle=False)
 

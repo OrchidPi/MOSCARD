@@ -18,7 +18,18 @@ class CrossAttention(nn.Module):
         # Output projection
         self.out_proj = nn.Linear(embed_dim, embed_dim)
 
-    def forward(self, x1, x2, modality=None):
+        # Residual connection and normalization layers
+        self.ln_1 = nn.LayerNorm(embed_dim)
+        self.ln_2 = nn.LayerNorm(embed_dim)
+
+        # MLP for feature transformation
+        self.mlp = nn.Sequential(
+            nn.Linear(embed_dim, embed_dim),
+            nn.GELU(),
+            nn.Linear(embed_dim, embed_dim)
+        )
+
+    def forward(self, x1, x2, x1_old, x2_old, modality=None):
         """
         x1: features of CXR images (modality A)
         x2: features of ECG signals (modality B)
@@ -30,6 +41,11 @@ class CrossAttention(nn.Module):
         # Ensure both input embeddings have the same dimension
         assert embed_dim1 == self.embed_dim and embed_dim2 == self.embed_dim, \
             "Input embedding dimensions must match the specified embed_dim"
+        
+
+        # Layer normalization before attention
+        # x1_norm = self.ln_1(x1)
+        # x2_norm = self.ln_1(x2)
 
         if modality == "ECG":
             # ECG as query, CXR as key/value
@@ -58,4 +74,14 @@ class CrossAttention(nn.Module):
         attention_output = attention_output.transpose(1, 2).contiguous().view(batch_size, -1, self.embed_dim)
         output = self.out_proj(attention_output)
 
-        return output
+        output = x1 + output if modality == "CXR" else x2 + output
+        # Layer normalization and MLP
+        output_norm = self.ln_2(output)
+        output_norm = x1 + output_norm if modality == "CXR" else x2 + output_norm
+        output_mlp = self.mlp(output_norm)
+
+        # Add residual connection for MLP output
+        output_final = x1 + output_mlp if modality == "CXR" else x2 + output_mlp
+
+
+        return output_final
