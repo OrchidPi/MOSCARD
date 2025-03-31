@@ -5,6 +5,7 @@ Our study addresses bias in multimodal medical imaging by integrating causal rea
 
 * Model overview:
 <img src="https://github.com/OrchidPi/MOSCARD/blob/main/examples/model.png" width="100%" align="middle"/>
+Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X, task label Y, causal factor A, confounder C, directed edges for causal confounder relations: (a) Step 1 - single modality encoder training with confusion loss; (b) Step 2, multimodal learning with co-attention and SCM; (c) Step 1 training – Single modality; (d) Step 2 Multimodal training with co-attention and causal intervention.
 
 ### Train the models
 
