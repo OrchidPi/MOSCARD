@@ -4,7 +4,7 @@ Our study addresses bias in multimodal medical imaging by integrating causal rea
 ### Model framework and Causal graph 
 
 * Model overview:
-<img src="https://github.com/OrchidPi/MOSCARD/main/examples/model.png" width="100%" align="middle"/>
+<img src="https://github.com/OrchidPi/MOSCARD/blob/main/examples/model.png" width="100%" align="middle"/>
 
 ### Train the models
 
