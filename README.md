@@ -32,6 +32,37 @@ Ensure all necessary packages are installed by running:
 | 3 | Conf | Trains the single baseline model using backbones that were trained with de-confounding strategies. |
 | 4 | CaConf | Trains the causal model using de-confounding backbones (Final Proposed model). |
 
+<h5> Mode Options</h5>
+
+<table>
+  <tr>
+    <th>Option</th>
+    <th>Mode</th>
+    <th>Description</th>
+  </tr>
+  <tr>
+    <td>1</td>
+    <td>Baseline</td>
+    <td>Multimodal model without de-confounding or causal reasoning</td>
+  </tr>
+  <tr>
+    <td>2</td>
+    <td>Causal</td>
+    <td>Adds causal reasoning on top of the Baseline</td>
+  </tr>
+  <tr>
+    <td>3</td>
+    <td>Conf</td>
+    <td>Baseline model with de-confounded backbones</td>
+  </tr>
+  <tr>
+    <td>4</td>
+    <td>CaConf</td>
+    <td>Causal model with de-confounded backbones (Final model)</td>
+  </tr>
+</table>
+
+
 >> Train follow the on-screen prompt to choose a mode (1–4): `bash MOSCARD/scrpits/train.sh`
 
 > MedCLIP Baseline training
