@@ -1,35 +1,22 @@
 # MOSCARD - Multimodal Opportunistic Screening for Cardiovascular Adverse events with Causal Reasoning and De-confounding
-This study aims to mitigate bias in medical imaging by incorporating causal reasoning. We leverage a well-performed [pretrained model](https://github.com/jfhealthcare/Chexpert/tree/master) to enhance the robustness and fairness of predictions.
+Our study addresses bias in multimodal medical imaging by integrating causal reasoning techniques. We utilize chest X-ray (CXR) images as the primary source of information and employ electrocardiogram (ECG) signals as a complementary guiding modality. To effectively preserve and leverage the essential features from CXR images while incorporating insights from ECG data, we have adapted a [co-attention mechanism] (https://github.com/mahmoodlab/MCAT/tree/master?tab=readme-ov-file) originally developed for processing H&E stained whole slide images alongside genomic factors. For single modality training, we employ a Vision Transformer (ViT) architecture, specifically utilizing the [MedCLIP] (https://github.com/RyanWangZf/MedCLIP) image modality, to serve as a unified encoder for both ECG signals and CXR images during the encoder training phase. This integration allows for a cohesive and comprehensive analysis of the multimodal medical data.
 
 ### Model framework and Causal graph 
 
 * Model overview:
-<img src="https://github.com/OrchidPi/MOSCARD/blob/examples/config/model%20.png" width="100%" align="middle"/>
-
-* Causal graph:
-<img src="https://github.com/OrchidPi/Mitigating-Bias-in-Medical-imaging-with-Causal-Reasoning/blob/main/config/Causal%20Graph.png" width="50%" align="middle"/>
+<img src="https://github.com/OrchidPi/MOSCARD/main/examples/model.png" width="100%" align="middle"/>
 
 ### Train the models
 
 * Data preparation
 > Prepare your data by following the example provided in `config/train.csv`.
 > Update the data path in `config/config.json`.
+> Convert ECG signals into image representations using the [ecg_plot library] (https://github.com/dy1901/ecg_plot/tree/master)
 
 * Model Training
 Ensure all necessary packages are installed by running:
 `pip install -r requirements.txt`
-> Baseline Pretrained model : `python bin/train_pretrained.py  config/Mayo.json logdir/logdir_pretrain --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
-
-> Baseline Debiased model : `python bin/train_debiased.py  config/Mayo.json logdir/logdir_debiased --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
-
-> Ablation study :
->> Baseline Causal model : `python bin/train_baselinecausal.py  config/Mayo.json logdir/logdir_causal --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
->> 
->> Baseline Confounder model : `python bin/train_conf.py  config/Mayo.json logdir/logdir_causal --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
->> 
->> Causal model (Baseline Causal model+causal feature concat): `python bin/train_causal.py  config/Mayo.json logdir/logdir_causal --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
->> 
->> Causal+Confounder model (Baseline Causal model+Baseline Confounder model) : `python bin/train_causalconf_noconcat.py config/Mayo.json logdir/logdir_causalconf_noconcat --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
+> bash 
 >> 
 >> Final Causal+Confounder model (Baseline Causal model+Baseline Confounder model with causal feature concat) : `python bin/train_causalconf.py config/Mayo.json logdir/logdir_causalconf --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
 
@@ -38,7 +25,7 @@ To test your model, run the example command:
 > `python logdir/logdir_causalconf/classification/bin/test_internal.py`
 
 * Grad-CAM figure
-To plot a Grad-CAM figure, you can refer to the [code from this GitHub repository](https://github.com/adityac94/Grad_CAM_plus_plus/tree/master).
+To plot a saliency map, you can refer to the ([https://github.com/adityac94/Grad_CAM_plus_plus/tree/master](https://github.com/sunnynevarekar/pytorch-saliency-maps/blob/master/Saliency_maps_in_pytorch.ipynb)).
 
 ### Contact
 * If you have any quesions, please post it on github issues or email [me](jialupi@asu.edu)
