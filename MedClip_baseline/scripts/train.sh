@@ -17,12 +17,12 @@ case $choice in
         --model "main" --model_step "Classifier"--logtofile True
         ;;
     2)
-        echo "Running MedClip Baseline Classify..."
+        echo "Running MedClip Baseline Alignment..."
         PYTHONPATH=.:$PYTHONPATH python MedClip_baseline/bin/trian.py 
         MedClip_baseline/config/config.json MedClip_alignment 
         --num_workers 8 --device_ids "0,1" 
         --pre_train_backbone MedClip_baseline/ckpt/CXR.ckpt MedClip_baseline/ckpt/ECG.ckpt 
-        --model "main" --model_step "Classifier"--logtofile True
+        --model "main" --model_step "Alignment"--logtofile True
 
         echo "Invalid choice."
         ;;
