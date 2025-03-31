@@ -1,6 +1,6 @@
 {
     "train_csv": "examples/train.csv",
-    "dev_csv": "examples/mimic_test.csv",
+    "dev_csv": "examples/test.csv",
     "backbone": "densenet121",
     "num_heads": 8,
     "width": 512,
