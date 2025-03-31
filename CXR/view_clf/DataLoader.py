@@ -65,7 +65,7 @@ class OSADataset(Dataset):
         #    )
 
         #image_name = os.path.join(config.data_dir, self.df.at[index, "PNG_FIXED"])
-        image_name = self.df.at[index, "PNG_location"].strip()
+        image_name = self.df.at[index, "CXR_Path"].strip()
         #image_name = self.df.path.iloc[index] # absolute path to the image
 
         try:
@@ -78,13 +78,6 @@ class OSADataset(Dataset):
             x = np.array(x)
             x = transform(x)
 
-            #inverted_image_path = os.path.join(args.output_dir, f"inverted_{image_name}")
-            #cv2.imwrite(inverted_image_path, img)
-            #x = pydicom.dcmread(image_name)
-            #x = x.pixel_array
-            #x = (((x - x.min()) / x.max() - x.min())*255).astype(np.uint8)
-            #x = np.stack((x, )*3, axis=-1)
-            #x = np.transpose(x, (1, 2, 0))
             
             if self.mode == 'train':
                 if isinstance(x, np.ndarray):

@@ -83,9 +83,9 @@ def view_clf_inference(inference_df):
 if __name__ == "__main__":
     # Example usage
     # Prepare your 'inference_df' DataFrame here
-    inference_df = pd.read_csv("./MACE_processing_new.csv")
+    inference_df = pd.read_csv("/MOSCARD/examples/mimic_test.csv")
 
     # Assuming 'transforms' is defined appropriately in the DataLoader module or elsewhere
     transformed_inference_df = view_clf_inference(inference_df)
     #print(transformed_inference_df)
-    transformed_inference_df.to_csv("./MACE_processing_new_view.csv")
+    transformed_inference_df.to_csv("/MOSCARD/examples/mimic_test_view.csv")
