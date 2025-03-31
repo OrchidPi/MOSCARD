@@ -23,7 +23,7 @@ Ensure all necessary packages are installed by running:
 >> ECG single modality Baseline follow the on-screen prompt to choose a mode (1: Baseline single modality encoder training; 2: Single modality encoder training with confusion loss): `bash ECG/scrpits/train.sh`
 
 > MOSCARD training
-### Mode Options
+>> ##### Mode Options
 
 | Option | Mode Name | Description |
 |--------|-----------|-------------|
