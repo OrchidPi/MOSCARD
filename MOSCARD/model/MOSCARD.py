@@ -11,7 +11,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from model.model_utils import *
-from MedCLIP.medclip.modeling_medclip import MedCLIPVisionModelViT
+from model.MedClipVIT import MedCLIPVisionModelViT
 
 import torch
 from torch import Tensor
