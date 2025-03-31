@@ -23,13 +23,14 @@ Ensure all necessary packages are installed by running:
 >> ECG single modality Baseline follow the on-screen prompt to choose a mode (1: Baseline single modality encoder training; 2: Single modality encoder training with confusion loss): `bash ECG/scrpits/train.sh`
 
 > MOSCARD training
->> Mode Options
-| Option | Mode Name   | Description                                                                 |
-|--------|-------------|-----------------------------------------------------------------------------|
-| 1      | Baseline    | Trains a baseline multimodal model using pre-trained ECG and CXR backbones without de-confouding and causal reasoning. |
-| 2      | Causal      | Trains the model with causal reasoning mechanisms based on Baseline.                   |
-| 3      | Conf        | Trains the single baseline model using backbones that were trained with de-confounder strategies. |
-| 4      | CaConf      | Trains the causal model using de-confounding backbones (Final Proposed model).                    |
+### Mode Options
+
+| Option | Mode Name | Description |
+|--------|-----------|-------------|
+| 1 | Baseline | Trains a baseline multimodal model using pre-trained ECG and CXR backbones without de-confounding and causal reasoning. |
+| 2 | Causal | Trains the model with causal reasoning mechanisms based on Baseline. |
+| 3 | Conf | Trains the single baseline model using backbones that were trained with de-confounding strategies. |
+| 4 | CaConf | Trains the causal model using de-confounding backbones (Final Proposed model). |
 
 >> Train follow the on-screen prompt to choose a mode (1–4): `bash MOSCARD/scrpits/train.sh`
 
