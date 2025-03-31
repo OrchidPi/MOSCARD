@@ -10,27 +10,27 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
 ### Train the models
 
 * Data preparation
-> Prepare your data by following the example provided in `config/train.csv`.
-> Update the data path in `config/config.json`.
-> Convert ECG signals into image representations using the [ecg_plot library](https://github.com/dy1901/ecg_plot/tree/master)
-> Delect all the lateral images of chest X-ray datasets by runing example command: `python CXR/view_clf/inference.py`
+  - Prepare your data by following the example provided in `config/train.csv`.
+  - Update the data path in `config/config.json`.
+  - Convert ECG signals into image representations using the [ecg_plot library](https://github.com/dy1901/ecg_plot/tree/master)
+  - Delect all the lateral images of chest X-ray datasets by runing example command: `python CXR/view_clf/inference.py`
 
 * Model Training
 Ensure all necessary packages are installed by running:
 `pip install -r requirements.txt`
-> Single modality training
->> CXR single modality Baseline follow the on-screen prompt to choose a mode (1: Baseline single modality encoder training; 2: Single modality encoder training with confusion loss): `bash CXR/scrpits/train.sh`
->> ECG single modality Baseline follow the on-screen prompt to choose a mode (1: Baseline single modality encoder training; 2: Single modality encoder training with confusion loss): `bash ECG/scrpits/train.sh`
+  - Single modality training
+    - CXR single modality Baseline follow the on-screen prompt to choose a mode (1: Baseline single modality encoder training; 2: Single modality encoder training with confusion loss): `bash CXR/scrpits/train.sh`
+    - ECG single modality Baseline follow the on-screen prompt to choose a mode (1: Baseline single modality encoder training; 2: Single modality encoder training with confusion loss): `bash ECG/scrpits/train.sh`
 
-> MOSCARD training
->> ##### Mode Options
+  - MOSCARD training
+    - Mode Options
 
-| Option | Mode Name | Description |
-|--------|-----------|-------------|
-| 1 | Baseline | Trains a baseline multimodal model using pre-trained ECG and CXR backbones without de-confounding and causal reasoning. |
-| 2 | Causal | Trains the model with causal reasoning mechanisms based on Baseline. |
-| 3 | Conf | Trains the single baseline model using backbones that were trained with de-confounding strategies. |
-| 4 | CaConf | Trains the causal model using de-confounding backbones (Final Proposed model). |
+    | Option | Mode Name | Description |
+    |--------|-----------|-------------|
+    | 1 | Baseline | Trains a baseline multimodal model using pre-trained ECG and CXR backbones without de-confounding and causal reasoning. |
+    | 2 | Causal | Trains the model with causal reasoning mechanisms based on Baseline. |
+    | 3 | Conf | Trains the single baseline model using backbones that were trained with de-confounding strategies. |
+    | 4 | CaConf | Trains the causal model using de-confounding backbones (Final Proposed model). |
 
 <h5> Mode Options</h5>
 
@@ -63,23 +63,23 @@ Ensure all necessary packages are installed by running:
 </table>
 
 
->> Train follow the on-screen prompt to choose a mode (1–4): `bash MOSCARD/scrpits/train.sh`
+ Train follow the on-screen prompt to choose a mode (1–4): `bash MOSCARD/scrpits/train.sh`
 
-> MedCLIP Baseline training
-> Train follow the on-screen prompt to choose a mode (1-2): `bash MedClip_baseline/scripts/train.sh`
->> Mode 1 focuses on learning shared representations between modalities through CLIP-based alignment and cross-attention.
->> Mode 2 performs downstream classification by freezing the alignment backbone and training only the final MLP classifiers.
+  - MedCLIP Baseline training
+  - Train follow the on-screen prompt to choose a mode (1-2): `bash MedClip_baseline/scripts/train.sh`
+    - Mode 1 focuses on learning shared representations between modalities through CLIP-based alignment and cross-attention.
+    - Mode 2 performs downstream classification by freezing the alignment backbone and training only the final MLP classifiers.
 
-> ALBEF Baseline training reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
+  - ALBEF Baseline training reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
 
 
 * Model Testing
-> Single modality testing
->> CXR single modality: `bash CXR/scrpits/train.sh`
->> ECG single modality: `bash ECG/scrpits/train.sh`
-> MOSCARD training testing: `bash MOSCARD/scrpits/test.sh`
-> MedCLIP Baseline testing: `bash MedClip_baseline/scripts/test.sh`
-> ALBEF Baseline testing reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
+  - Single modality testing
+    - CXR single modality: `bash CXR/scrpits/train.sh`
+    - ECG single modality: `bash ECG/scrpits/train.sh`
+  - MOSCARD training testing: `bash MOSCARD/scrpits/test.sh`
+  - MedCLIP Baseline testing: `bash MedClip_baseline/scripts/test.sh`
+  - ALBEF Baseline testing reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
 
 
 
