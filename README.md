@@ -13,47 +13,54 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
 > Prepare your data by following the example provided in `config/train.csv`.
 > Update the data path in `config/config.json`.
 > Convert ECG signals into image representations using the [ecg_plot library](https://github.com/dy1901/ecg_plot/tree/master)
+> Delect all the lateral images of chest X-ray datasets by runing example command: `python CXR/view_clf/inference.py`
 
 * Model Training
 Ensure all necessary packages are installed by running:
 `pip install -r requirements.txt`
-> Single modality
->> CXR single modality Baseline : `bash CXR/scrpits/train.sh`
->> ECG single modality Baseline : `bash ECG/scrpits/train.sh`
-> Proposed Multimodal MOSCARD
->> `bash MOSCARD/scrpits/train.sh`
->> ### Mode Options
+> Single modality training
+>> CXR single modality Baseline follow the on-screen prompt to choose a mode (1: Baseline single modality encoder training; 2: Single modality encoder training with confusion loss): `bash CXR/scrpits/train.sh`
+>> ECG single modality Baseline follow the on-screen prompt to choose a mode (1: Baseline single modality encoder training; 2: Single modality encoder training with confusion loss): `bash ECG/scrpits/train.sh`
 
+> MOSCARD training
+>> Mode Options
 | Option | Mode Name   | Description                                                                 |
 |--------|-------------|-----------------------------------------------------------------------------|
 | 1      | Baseline    | Trains a baseline multimodal model using pre-trained ECG and CXR backbones without de-confouding and causal reasoning. |
 | 2      | Causal      | Trains the model with causal reasoning mechanisms based on Baseline.                   |
 | 3      | Conf        | Trains the single baseline model using backbones that were trained with de-confounder strategies. |
-| 4      | CaConf      | Trains the causal model using de-confounding backbones.                    |
+| 4      | CaConf      | Trains the causal model using de-confounding backbones (Final Proposed model).                    |
 
+>> Train follow the on-screen prompt to choose a mode (1–4): `bash MOSCARD/scrpits/train.sh`
 
-> Baseline Debiased model : `python bin/train_debiased.py  config/Mayo.json logdir/logdir_debiased --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
+> MedCLIP Baseline training
+> Train follow the on-screen prompt to choose a mode (1-2): `bash MedClip_baseline/scripts/train.sh`
+>> Mode 1 focuses on learning shared representations between modalities through CLIP-based alignment and cross-attention.
+>> Mode 2 performs downstream classification by freezing the alignment backbone and training only the final MLP classifiers.
 
-> MOSCARD : `python bin/train_pretrained.py  config/Mayo.json logdir/logdir_pretrain --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
+> ALBEF Baseline training reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
 
-> Baseline Debiased model : `python bin/train_debiased.py  config/Mayo.json logdir/logdir_debiased --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
-
->> 
->> Final Causal+Confounder model (Baseline Causal model+Baseline Confounder model with causal feature concat) : `python bin/train_causalconf.py config/Mayo.json logdir/logdir_causalconf --num_workers 8 --device_ids "0,1"  --pre_train "config/pre_train.pth"  --logtofile True`
 
 * Model Testing
-To test your model, run the example command:
-> `python logdir/logdir_causalconf/classification/bin/test_internal.py`
+> Single modality testing
+>> CXR single modality: `bash CXR/scrpits/train.sh`
+>> ECG single modality: `bash ECG/scrpits/train.sh`
+> MOSCARD training testing: `bash MOSCARD/scrpits/test.sh`
+> MedCLIP Baseline testing: `bash MedClip_baseline/scripts/test.sh`
+> ALBEF Baseline testing reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
 
-* Grad-CAM figure
+
+
+* Saliency map figure
 To plot a saliency map, you can refer to the [code]([https://github.com/adityac94/Grad_CAM_plus_plus/tree/master](https://github.com/sunnynevarekar/pytorch-saliency-maps/blob/master/Saliency_maps_in_pytorch.ipynb)).
 
 ### Contact
 * If you have any quesions, please post it on github issues or email [me](jialupi@asu.edu)
 
 ### Reference
-* [https://github.com/jfhealthcare/Chexpert/tree/master](https://github.com/jfhealthcare/Chexpert/tree/master)
-* [https://github.com/zhihengli-UR/DebiAN](https://github.com/zhihengli-UR/DebiAN)
-* [https://github.com/adityac94/Grad_CAM_plus_plus/tree/master](https://github.com/adityac94/Grad_CAM_plus_plus/tree/masterhttps://github.com/adityac94/Grad_CAM_plus_plus/tree/master)
+* [https://github.com/mahmoodlab/MCAT/tree/master?tab=readme-ov-file](https://github.com/mahmoodlab/MCAT/tree/master?tab=readme-ov-file)
+* [https://github.com/RyanWangZf/MedCLIP](https://github.com/RyanWangZf/MedCLIP)
+* [https://github.com/dy1901/ecg_plot/tree/master](https://github.com/dy1901/ecg_plot/tree/master)
+* [https://github.com/adityac94/Grad_CAM_plus_plus/tree/master](https://github.com/sunnynevarekar/pytorch-saliency-maps/blob/master/Saliency_maps_in_pytorch.ipynb)
 
 
