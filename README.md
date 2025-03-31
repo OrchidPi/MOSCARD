@@ -4,7 +4,7 @@ This study aims to mitigate bias in medical imaging by incorporating causal reas
 ### Model framework and Causal graph 
 
 * Model overview:
-<img src="https://github.com/OrchidPi/Mitigating-Bias-in-Medical-imaging-with-Causal-Reasoning/blob/main/config/Causal%20Framework.png" width="100%" align="middle"/>
+<img src="https://github.com/OrchidPi/MOSCARD/blob/examples/config/model%20.png" width="100%" align="middle"/>
 
 * Causal graph:
 <img src="https://github.com/OrchidPi/Mitigating-Bias-in-Medical-imaging-with-Causal-Reasoning/blob/main/config/Causal%20Graph.png" width="50%" align="middle"/>
