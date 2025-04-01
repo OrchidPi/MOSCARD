@@ -48,11 +48,8 @@ Ensure all necessary packages are installed by running:
   - ALBEF Baseline testing reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
 
 * Model Weights
-  - MOSCARD: [google drive](https://drive.google.com/drive/folders/13wYQJhSrSCJVBRp3493bu3YzyYBJdMLs?usp=drive_link)
-  - CXR single modality: [google drive](https://drive.google.com/drive/folders/14bAdQum0Wx_YbnNd9Bup04Id-KGskXFV?usp=sharing)
-  - ECG single modality: [google drive](https://drive.google.com/drive/folders/1PzoPrpRWGQlQZPHu2xCa6r-MzzIr-tiS?usp=sharing)
-  - MedCLIP: [google drive](https://drive.google.com/drive/folders/1U2TZT-Q3EJwxQYVHTgxo8_L_t20-zJDD?usp=sharing)
-  - ALBEF: [google drive](https://drive.google.com/drive/folders/1ZDxkccpNr33y4s2O7uvOX9Biz4H-8Kza?usp=sharing)
+  - Model weights for the proposed MOSCARD model, including Step 1: single-modality training weights, and Step 2: multi-modal classification training weights.
+    Location: [google drive](https://drive.google.com/drive/folders/10IcvmM1VtWpMg3cK7XkLnVyc-KuK433V?usp=sharing)
 
 
 * Saliency map figure
