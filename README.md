@@ -21,8 +21,6 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
     <th colspan="2">CXR+ECG (ECG)</th>
   </tr>
   <tr>
-    <th></th>
-    <th></th>
     <th>Accuracy</th><th>AUC</th>
     <th>Accuracy</th><th>AUC</th>
     <th>Accuracy</th><th>AUC</th>
