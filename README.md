@@ -28,10 +28,11 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
   <tr>
     <td rowspan="4">Internal datasets (PCI)</td>
     <td>MACE_6M</td>
-    </td>0.653[0.652, 0.655]<td></td>0.711[0.709, 0.712]<td>
-    </td>0.643[0.642, 0.645]<td></td>0.690[0.688, 0.690]<td>
-    </td>0.639[0.637, 0.641]<td></td>0.681[0.678, 0.682]<td>
+    <td>0.653 [0.652, 0.655]</td><td>0.711 [0.709, 0.712]</td>
+    <td>0.643 [0.642, 0.645]</td><td>0.690 [0.688, 0.690]</td>
+    <td>0.639 [0.637, 0.641]</td><td>0.681 [0.678, 0.682]</td>
   </tr>
+
   <tr>
     <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
   </tr>
