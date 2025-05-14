@@ -46,52 +46,113 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
     <td>External datasets (ED)</td>
     <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
   </tr>
+    <th colspan="10">Causal Multimodal</th>
+  </tr>
+  <tr>
+    <th rowspan="2">Dataset Types</th>
+    <th rowspan="2">MACE</th>
+    <th colspan="2">CXR+ECG (Combined)</th>
+    <th colspan="2">CXR+ECG (CXR)</th>
+    <th colspan="2">CXR+ECG (ECG)</th>
+  </tr>
+  <tr>
+    <th>Accuracy</th><th>AUC</th>
+    <th>Accuracy</th><th>AUC</th>
+    <th>Accuracy</th><th>AUC</th>
+  </tr>
+  <tr>
+    <td rowspan="4">Internal datasets (PCI)</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_2yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_5yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (MIMIC)</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (ED)</td>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+    <th colspan="10">Conf Multimodal</th>
+  </tr>
+  <tr>
+    <th rowspan="2">Dataset Types</th>
+    <th rowspan="2">MACE</th>
+    <th colspan="2">CXR+ECG (Combined)</th>
+    <th colspan="2">CXR+ECG (CXR)</th>
+    <th colspan="2">CXR+ECG (ECG)</th>
+  </tr>
+  <tr>
+    <th>Accuracy</th><th>AUC</th>
+    <th>Accuracy</th><th>AUC</th>
+    <th>Accuracy</th><th>AUC</th>
+  </tr>
+  <tr>
+    <td rowspan="4">Internal datasets (PCI)</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_2yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_5yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (MIMIC)</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (ED)</td>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+    <th colspan="10">CaConf Multimodal</th>
+  </tr>
+  <tr>
+    <th rowspan="2">Dataset Types</th>
+    <th rowspan="2">MACE</th>
+    <th colspan="2">CXR+ECG (Combined)</th>
+    <th colspan="2">CXR+ECG (CXR)</th>
+    <th colspan="2">CXR+ECG (ECG)</th>
+  </tr>
+  <tr>
+    <th>Accuracy</th><th>AUC</th>
+    <th>Accuracy</th><th>AUC</th>
+    <th>Accuracy</th><th>AUC</th>
+  </tr>
+  <tr>
+    <td rowspan="4">Internal datasets (PCI)</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_2yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_5yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (MIMIC)</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (ED)</td>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
 </table>
 
-
-
-
-
-
-| Baseline Multimodal                |           | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
-| **Dataset Type**                   | MACE      | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
-|------------------------------------|-----------|-----------|-------|-----------|-----|-----------|-----|
-| **Internal datasets**              | MACE_6M   |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_1yr  |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_2yr  |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_5yr  |           |       |           |     |           |     |
-| **External datasets (MIMIC)**      | MACE_6M   |           |       |           |     |           |     |
-| **External datasets (ED)**         | MACE_1yr  |           |       |           |     |           |     |
-
-| Causal Multimodal                  |           | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
-| **Dataset Type**                   | MACE      | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
-|------------------------------------|-----------|-----------|-------|-----------|-----|-----------|-----|
-| **Internal datasets**              | MACE_6M   |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_1yr  |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_2yr  |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_5yr  |           |       |           |     |           |     |
-| **External datasets (MIMIC)**      | MACE_6M   |           |       |           |     |           |     |
-| **External datasets (ED)**         | MACE_1yr  |           |       |           |     |           |     |
-
-| Conf Multimodal                    |           | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
-| **Dataset Type**                   | MACE      | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
-|------------------------------------|-----------|-----------|-------|-----------|-----|-----------|-----|
-| **Internal datasets**              | MACE_6M   |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_1yr  |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_2yr  |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_5yr  |           |       |           |     |           |     |
-| **External datasets (MIMIC)**      | MACE_6M   |           |       |           |     |           |     |
-| **External datasets (ED)**         | MACE_1yr  |           |       |           |     |           |     |
-
-| CaConf Multimodal                  |           | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
-| **Dataset Type**                   | MACE      | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
-|------------------------------------|-----------|-----------|-------|-----------|-----|-----------|-----|
-| **Internal datasets**              | MACE_6M   |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_1yr  |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_2yr  |           |       |           |     |           |     |
-| **Internal datasets**              | MACE_5yr  |           |       |           |     |           |     |
-| **External datasets (MIMIC)**      | MACE_6M   |           |       |           |     |           |     |
-| **External datasets (ED)**         | MACE_1yr  |           |       |           |     |           |     |
 
 
 ### Train the models
