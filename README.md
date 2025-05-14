@@ -9,43 +9,43 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
 
 ### Performance
 
-| Baseline Multimodal                            | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
-|                                    | Label     | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
+| Baseline Multimodal                |           | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
+|------------------------------------| MACE      | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
 |------------------------------------|-----------|-----------|-------|-----------|-----|-----------|-----|
 | **Internal datasets**              | MACE_6M   |           |       |           |     |           |     |
-|------------------------------------| MACE_1yr  |           |       |           |     |           |     |
-|                                    | MACE_2yr  |           |       |           |     |           |     |
-|                                    | MACE_5yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_1yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_2yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_5yr  |           |       |           |     |           |     |
 | **External datasets (MIMIC)**      | MACE_6M   |           |       |           |     |           |     |
 | **External datasets (ED)**         | MACE_1yr  |           |       |           |     |           |     |
 
-| Causal Multimodal                              | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
-|                                    | Label     | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
+| Causal Multimodal                  |           | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
+|                                    | MACE      | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
 |------------------------------------|-----------|-----------|-------|-----------|-----|-----------|-----|
 | **Internal datasets**              | MACE_6M   |           |       |           |     |           |     |
-|                                    | MACE_1yr  |           |       |           |     |           |     |
-|                                    | MACE_2yr  |           |       |           |     |           |     |
-|                                    | MACE_5yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_1yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_2yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_5yr  |           |       |           |     |           |     |
 | **External datasets (MIMIC)**      | MACE_6M   |           |       |           |     |           |     |
 | **External datasets (ED)**         | MACE_1yr  |           |       |           |     |           |     |
 
-| Conf Multimodal                                | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
-|                                    | Label     | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
+| Conf Multimodal                    |           | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
+|                                    | MACE      | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
 |------------------------------------|-----------|-----------|-------|-----------|-----|-----------|-----|
 | **Internal datasets**              | MACE_6M   |           |       |           |     |           |     |
-|                                    | MACE_1yr  |           |       |           |     |           |     |
-|                                    | MACE_2yr  |           |       |           |     |           |     |
-|                                    | MACE_5yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_1yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_2yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_5yr  |           |       |           |     |           |     |
 | **External datasets (MIMIC)**      | MACE_6M   |           |       |           |     |           |     |
 | **External datasets (ED)**         | MACE_1yr  |           |       |           |     |           |     |
 
-| CaConf Multimodal                              | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
-|                                    | Label     | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
+| CaConf Multimodal                  |           | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
+|                                    | MACE      | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
 |------------------------------------|-----------|-----------|-------|-----------|-----|-----------|-----|
 | **Internal datasets**              | MACE_6M   |           |       |           |     |           |     |
-|                                    | MACE_1yr  |           |       |           |     |           |     |
-|                                    | MACE_2yr  |           |       |           |     |           |     |
-|                                    | MACE_5yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_1yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_2yr  |           |       |           |     |           |     |
+| **Internal datasets**              | MACE_5yr  |           |       |           |     |           |     |
 | **External datasets (MIMIC)**      | MACE_6M   |           |       |           |     |           |     |
 | **External datasets (ED)**         | MACE_1yr  |           |       |           |     |           |     |
 
