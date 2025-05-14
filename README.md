@@ -11,21 +11,24 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
 
 <table border="1">
   <tr>
-    <th colspan="2">Baseline Multimodal</th>
-    <th rowspan="1">Dataset Types</th>
-    <th rowspan="1">MACE</th>
+    <th colspan="10">Baseline Multimodal</th>
+  </tr>
+  <tr>
+    <th>Dataset Types</th>
+    <th>MACE</th>
     <th colspan="2">CXR+ECG (Combined)</th>
     <th colspan="2">CXR+ECG (CXR)</th>
     <th colspan="2">CXR+ECG (ECG)</th>
   </tr>
   <tr>
+    <th></th>
+    <th></th>
     <th>Accuracy</th><th>AUC</th>
     <th>Accuracy</th><th>AUC</th>
     <th>Accuracy</th><th>AUC</th>
   </tr>
   <tr>
-    <td rowspan="6"></td>
-    <td rowspan="4">Internal datasets</td>
+    <td rowspan="4">Internal datasets (PCI)</td>
     <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
   </tr>
   <tr>
