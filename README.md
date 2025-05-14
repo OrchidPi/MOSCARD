@@ -9,10 +9,9 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
 
 ### Performance
 
-<h3>Baseline Multimodal</h3>
-
 <table border="1">
   <tr>
+    <th rowspan="2">Baseline Multimodal</th>
     <th rowspan="2">Dataset Types</th>
     <th rowspan="2">MACE</th>
     <th colspan="2">CXR+ECG (Combined)</th>
@@ -25,6 +24,7 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
     <th>Accuracy</th><th>AUC</th>
   </tr>
   <tr>
+    <td rowspan="6"></td>
     <td rowspan="4">Internal datasets</td>
     <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
   </tr>
@@ -42,10 +42,48 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
     <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
   </tr>
   <tr>
-    <td>External datasets (ED)</td>
+    <td>External datasets (Mayo ED)</td>
     <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
   </tr>
 </table>
+<table border="1">
+  <tr>
+    <th rowspan="2">Baseline Multimodal</th>
+    <th rowspan="2">Dataset Types</th>
+    <th rowspan="2">MACE</th>
+    <th colspan="2">CXR+ECG (Combined)</th>
+    <th colspan="2">CXR+ECG (CXR)</th>
+    <th colspan="2">CXR+ECG (ECG)</th>
+  </tr>
+  <tr>
+    <th>Accuracy</th><th>AUC</th>
+    <th>Accuracy</th><th>AUC</th>
+    <th>Accuracy</th><th>AUC</th>
+  </tr>
+  <tr>
+    <td rowspan="6"></td>
+    <td rowspan="4">Internal datasets</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_2yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_5yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (MIMIC)</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (Mayo ED)</td>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+</table>
+
 
 
 
