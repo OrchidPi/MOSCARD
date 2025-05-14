@@ -9,7 +9,7 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
 
 ### Performance
 
-| Baseline Multimodal                            | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
+| Baseline Multimodal                /            | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
 |                                    | Label     | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
 |------------------------------------|-----------|-----------|-------|-----------|-----|-----------|-----|
 | **Internal datasets**              | MACE_6M   |           |       |           |     |           |     |
