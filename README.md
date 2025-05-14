@@ -7,11 +7,14 @@ Our study addresses bias in multimodal medical imaging by integrating causal rea
 <img src="https://github.com/OrchidPi/MOSCARD/blob/main/examples/model.png" width="100%" align="middle"/>
 Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X, task label Y, causal factor A, confounder C, directed edges for causal confounder relations: (a) Step 1 – single modality encoder training with confusion loss; (b) Step 2 multimodal learning with co-attention and SCM; (c) Step 1 training – Single modality; (d) Step 2 Multimodal training with co-attention and causal intervention.
 
+### Performance
 
-<table>
+<h3>Baseline Multimodal</h3>
+
+<table border="1">
   <tr>
-    <th rowspan="2">Dataset Type</th>
-    <th rowspan="2">Label</th>
+    <th rowspan="2">Dataset Types</th>
+    <th rowspan="2">MACE</th>
     <th colspan="2">CXR+ECG (Combined)</th>
     <th colspan="2">CXR+ECG (CXR)</th>
     <th colspan="2">CXR+ECG (ECG)</th>
@@ -22,13 +25,31 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
     <th>Accuracy</th><th>AUC</th>
   </tr>
   <tr>
-    <td>Internal datasets</td><td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+    <td rowspan="4">Internal datasets</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
   </tr>
-  <!-- more rows here -->
+  <tr>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_2yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>MACE_5yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (MIMIC)</td>
+    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
+  <tr>
+    <td>External datasets (ED)</td>
+    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+  </tr>
 </table>
 
 
-### Performance
+
+
 
 | Baseline Multimodal                |           | CXR+ECG (Combined)| CXR+ECG (CXR)   | CXR+ECG (ECG)   |
 | **Dataset Type**                   | MACE      | Accuracy  | AUC   | Accuracy  | AUC | Accuracy  | AUC |
