@@ -269,7 +269,7 @@ Ensure all necessary packages are installed by running:
 
 * Model Weights
   - Model weights for the proposed MOSCARD model, including Step 1: single-modality training weights, and Step 2: multi-modal classification training weights.
-    Location: [google drive](https://drive.google.com/drive/folders/10IcvmM1VtWpMg3cK7XkLnVyc-KuK433V?usp=sharing)
+    Location: [google drive]
 
 
 * Saliency map figure
