@@ -256,7 +256,7 @@ Ensure all necessary packages are installed by running:
     - Mode 1 focuses on learning shared representations between modalities through CLIP-based alignment and cross-attention.
     - Mode 2 performs downstream classification by freezing the alignment backbone and training only the final MLP classifiers.
 
-  - ALBEF Baseline training reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
+  - ALBEF Baseline training reference is from [code].
 
 
 * Model Testing
@@ -265,7 +265,7 @@ Ensure all necessary packages are installed by running:
     - ECG single modality: `bash ECG/scrpits/train.sh`
   - MOSCARD training testing: `bash MOSCARD/scrpits/test.sh`
   - MedCLIP Baseline testing: `bash MedClip_baseline/scripts/test.sh`
-  - ALBEF Baseline testing reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
+  - ALBEF Baseline testing reference is from [code].
 
 * Model Weights
   - Model weights for the proposed MOSCARD model, including Step 1: single-modality training weights, and Step 2: multi-modal classification training weights.
@@ -276,7 +276,7 @@ Ensure all necessary packages are installed by running:
 To plot a saliency map, you can refer to the [code]([https://github.com/adityac94/Grad_CAM_plus_plus/tree/master](https://github.com/sunnynevarekar/pytorch-saliency-maps/blob/master/Saliency_maps_in_pytorch.ipynb)).
 
 ### Contact
-* If you have any quesions, please post it on github issues or email [me](jialupi@asu.edu)
+* If you have any quesions, please post it on github issues or email me.
 
 ### Reference
 * [https://github.com/mahmoodlab/MCAT/tree/master?tab=readme-ov-file](https://github.com/mahmoodlab/MCAT/tree/master?tab=readme-ov-file)
