@@ -7,7 +7,7 @@ Our study addresses bias in multimodal medical imaging by integrating causal rea
 <img src="https://github.com/OrchidPi/MOSCARD/blob/main/examples/model.png" width="100%" align="middle"/>
 Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X, task label Y, causal factor A, confounder C, directed edges for causal confounder relations: (a) Step 1 – single modality encoder training with confusion loss; (b) Step 2 multimodal learning with co-attention and SCM; (c) Step 1 training – Single modality; (d) Step 2 Multimodal training with co-attention and causal intervention.
 
-### Performance
+### Performance: Comparative model performance after multimodal data alignment with combined and individual modality (95% confidence intervals using bootstrapping).  
 
 <table border="1">
   <tr>
@@ -28,26 +28,41 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
   <tr>
     <td rowspan="4">Internal datasets (PCI)</td>
     <td>MACE_6M</td>
-    <td>0.653 [0.652, 0.655]</td><td>0.711 [0.709, 0.712]</td>
-    <td>0.643 [0.642, 0.645]</td><td>0.690 [0.688, 0.690]</td>
-    <td>0.639 [0.637, 0.641]</td><td>0.681 [0.678, 0.682]</td>
+    <td>0.653[0.652, 0.655]</td><td>0.711[0.709, 0.712]</td>
+    <td>0.643[0.642, 0.645]</td><td>0.690[0.688, 0.690]</td>
+    <td>0.639[0.637, 0.641]</td><td>0.681[0.678, 0.682]</td>
   </tr>
   <tr>
-    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+    <td>MACE_1yr</td>
+    <td>0.663[0.663, 0.665]</td><td>0.725[0.723, 0.726]</td>
+    <td>0.651[0.649, 0.653]</td><td>0.705[0.703, 0.708]</td>
+    <td>0.646[0.645, 0.649]</td><td>0.688[0.685, 0.691]</td>
   </tr>
   <tr>
-    <td>MACE_2yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+    <td>MACE_2yr</td>
+    <td>0.656[0.653, 0.658]</td><td>0.717[0.716, 0.719]</td>
+    <td>0.647[0.645, 0.648]</td><td>0.702[0.698, 0.704]</td>
+    <td>0.646[0.646, 0.649]</td><td>0.690[0.687, 0.691]</td>
   </tr>
   <tr>
-    <td>MACE_5yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+    <td>MACE_5yr</td>
+    <td>0.653[0.651, 0.655]</td><td>0.712[0.710, 0.715]</td>
+    <td>0.640[0.635, 0.640]</td><td>0.698[0.696, 0.699]</td>
+    <td>0.642[0.641, 0.644]</td><td>0.687[0.684, 0.690]</td>
   </tr>
   <tr>
     <td>External datasets (MIMIC)</td>
-    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+    <td>MACE_6M</td>
+    <td>0.634[0.614, 0.640]</td><td>0.662[0.654, 0.679]</td>
+    <td>0.606[0.590, 0.616]</td><td>0.630[0.623, 0.653]</td>
+    <td>0.634[0.617, 0.640]</td><td>0.711[0.692, 0.724]</td>
   </tr>
   <tr>
     <td>External datasets (ED)</td>
-    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+    <td>MACE_1yr</td>
+    <td>0.715[0.708, 0.715]</td><td>0.792[0.789, 0.796]</td>
+    <td>0.739[0.729, 0.737]</td><td>0.804[0.800, 0.809]</td>
+    <td>0.672[0.668, 0.678]</td><td>0.737[0.733, 0.742]</td>
   </tr>
     <th colspan="10">Causal Multimodal</th>
   </tr>
@@ -65,10 +80,14 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
   </tr>
   <tr>
     <td rowspan="4">Internal datasets (PCI)</td>
-    <td>MACE_6M</td><td></td><td></td><td></td><td></td><td></td><td></td>
+    <td>MACE_6M</td>
+    <td>0.652[0.649, 0.653]</td><td>0.711[0.707, 0.711]</td>
+    <td>0.644[0.643, 0.647]</td><td>0.695[0.692, 0.696]</td>
+    <td>0.641[0.640, 0.645]</td><td>0.686[0.684, 0.687]</td>
   </tr>
   <tr>
-    <td>MACE_1yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
+    <td>MACE_1yr</td>
+    <td>0.662[0.661, 0.663]</td><td></td><td></td><td></td><td></td><td></td>
   </tr>
   <tr>
     <td>MACE_2yr</td><td></td><td></td><td></td><td></td><td></td><td></td>
