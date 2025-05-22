@@ -276,7 +276,7 @@ Ensure all necessary packages are installed by running:
 To plot a saliency map, you can refer to the [code]([https://github.com/adityac94/Grad_CAM_plus_plus/tree/master](https://github.com/sunnynevarekar/pytorch-saliency-maps/blob/master/Saliency_maps_in_pytorch.ipynb)).
 
 ### Contact
-* If you have any quesions, please post it on github issues or email me.
+* If you have any quesions, please post it on github issues or email [me](jialupi@asu.edu).
 
 ### Reference
 * [https://github.com/mahmoodlab/MCAT/tree/master?tab=readme-ov-file](https://github.com/mahmoodlab/MCAT/tree/master?tab=readme-ov-file)
