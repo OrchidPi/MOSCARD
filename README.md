@@ -256,7 +256,7 @@ Ensure all necessary packages are installed by running:
     - Mode 1 focuses on learning shared representations between modalities through CLIP-based alignment and cross-attention.
     - Mode 2 performs downstream classification by freezing the alignment backbone and training only the final MLP classifiers.
 
-  - ALBEF Baseline training reference is from [code].
+  - ALBEF Baseline training reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
 
 
 * Model Testing
@@ -265,11 +265,11 @@ Ensure all necessary packages are installed by running:
     - ECG single modality: `bash ECG/scrpits/train.sh`
   - MOSCARD training testing: `bash MOSCARD/scrpits/test.sh`
   - MedCLIP Baseline testing: `bash MedClip_baseline/scripts/test.sh`
-  - ALBEF Baseline testing reference is from [code].
+  - ALBEF Baseline testing reference is from [code](https://github.com/rimitalahiri92/ALBEF_baselines).
 
 * Model Weights
   - Model weights for the proposed MOSCARD model, including Step 1: single-modality training weights, and Step 2: multi-modal classification training weights.
-    Location: [google drive]
+    Location: [google drive](https://drive.google.com/drive/folders/10IcvmM1VtWpMg3cK7XkLnVyc-KuK433V?usp=drive_link)
 
 
 * Saliency map figure
