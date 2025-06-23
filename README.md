@@ -232,7 +232,7 @@ Proposed MOSCARD architecture and de-confounding causal reasoning graph, input X
 * Data preparation
   - Prepare your data by following the example provided in `config/train.csv`.
   - Update the data path in `config/config.json`.
-  - Convert ECG signals into image representations using the [ecg_plot library](https://github.com/dy1901/ecg_plot/tree/master)
+  - Convert ECG signals into image representations using the code example in `ECG/data/ecg_convert_example.ipynb` (reference from [ecg_plot library](https://github.com/dy1901/ecg_plot/tree/master))
   - Delect all the lateral images of chest X-ray datasets by runing example command: `python CXR/view_clf/inference.py`
 
 * Model Training
