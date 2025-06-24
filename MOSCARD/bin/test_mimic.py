@@ -176,16 +176,16 @@ def run(args):
     device = torch.device(f'cuda:{device_ids[0]}')
 
     if args.test_model == 'Baseline':
-        model = MCAT(cfg)
+        model = coatt(cfg)
         ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/Baseline.ckpt')
     elif args.test_model == 'Conf':
-        model = MCAT(cfg)
+        model = coatt(cfg)
         ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/Conf.ckpt')
     elif args.test_model == 'Causal':
-        model = MCAT(cfg)
+        model = coatt(cfg)
         ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/Causal.ckpt')
     elif args.test_model == 'CaConf':
-        model = MCAT(cfg)
+        model = coatt(cfg)
         ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/CaConf.ckpt')
     
     
