@@ -15,19 +15,19 @@ from sklearn.metrics import precision_recall_curve
 import pandas as pd
 import scipy.stats as st
 import random
-import re  
+import re  # Import regex module
 from tqdm import tqdm
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
 
-from data.dataset_mimic_test import ImageDataset_bimodal  
+from data.dataset_mimic_test import ImageDataset_Mayo_bimodal  # noqa
 from model.MOSCARD import coatt
 
 
 def get_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--model_path', default='./', type=str, help="Path to the trained models")
-    parser.add_argument('--in_csv_path', default='examples/mimic_test.csv', type=str, help="Path to the input image path in csv")
+    parser.add_argument('--in_csv_path', default='/media/Datacenter_storage/jialu/003/mimic_ECG_view_images/mimic_test_modify.csv', type=str, help="Path to the input image path in csv")
     parser.add_argument('--test_model', default='Baseline', type=str, help="Test model name [Baseline, Conf, Causal, CaConf]")
     parser.add_argument('--out_csv_path', default='test/mimic_test.csv', type=str, help="Path to the output predictions in csv")
     parser.add_argument('--num_workers', default=8, type=int, help="Number of workers for each data loader")
@@ -62,6 +62,8 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
     dataiter = iter(dataloader)
     num_tasks = len(cfg.num_classes)
 
+
+    # Define correct column order
     pred_cols = ["MACE_6M", "MACE_1yr", "MACE_2yr", "MACE_5yr"]
     combined_pred = [f"combined_pred_{x}" for x in pred_cols]
     CXR_pred = [f"CXR_pred_{x}" for x in pred_cols]
@@ -76,7 +78,7 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
         f.write(','.join(test_header) + '\n')
 
         for step in tqdm(range(steps), desc="Model Test Starting", unit="batch", ncols=80):
-            index, patient, image1, image2, path1, path2, labels = next(dataiter)
+            image1, image2, path1, path2, labels = next(dataiter)
             image1 = image1.to(device)
             image2 = image2.to(device)
             # print(f"image1:{image1}, image2:{image2}")
@@ -84,6 +86,8 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
             _, combined, CXR_output, ECG_output, _, _, _, _ = model(image1, image2)
 
             batch_size = len(path1)
+
+            # Get predictions for combined, CXR, and ECG outputs
             combined_pred = np.zeros((num_tasks, batch_size))
             CXR_pred = np.zeros((num_tasks, batch_size))
             ECG_pred = np.zeros((num_tasks, batch_size))
@@ -115,13 +119,20 @@ def extract_numeric(value):
 def calculate_metrics(csv_path, pred_col):
     """Calculate AUC and Accuracy for a given prediction column."""
     df_pre = pd.read_csv(csv_path)
+
+    # Convert MACE_1yr to integers (handle tensor string format)
     df_pre['MACE_6M'] = df_pre['MACE_6M'].apply(extract_numeric)
 
     # Compute ROC curve & AUC
     fpr, tpr, thresholds = metrics.roc_curve(df_pre['MACE_6M'], df_pre[pred_col], pos_label=1)
     auc = metrics.auc(fpr, tpr)
+
+    # Compute Optimal Threshold
     optimal_threshold = Find_Optimal_Cutoff(df_pre['MACE_6M'].tolist(), df_pre[pred_col].tolist())[0]
+
+    # Convert predictions to binary based on threshold
     binary_preds = (np.array(df_pre[pred_col].tolist()) >= optimal_threshold).astype(int)
+
     # Compute accuracy
     binary_accuracy = np.mean(binary_preds == df_pre['MACE_6M'])
 
@@ -150,6 +161,7 @@ def calculate_metrics(csv_path, pred_col):
     print(f"  - AUC: {auc:.3f} (95% CI: [{AUC_low:.3f}, {AUC_high:.3f}])")
     print(f"  - Accuracy: {binary_accuracy:.3f} (95% CI: [{ACC_low:.3f}, {ACC_high:.3f}])\n")
 
+    # print(f"{pred_col}: AUC = {auc:.3f}, Accuracy = {binary_accuracy:.3f}")
 
     return auc, binary_accuracy
 
