@@ -145,7 +145,7 @@ class MedCLIPVisionModelViT(nn.Module):
                 early_layer_output = self.projection_head(early_layer_output)
 
         # Retrieve the final output
-        final_output = outputs['pooler_output']
+        final_output = outputs.last_hidden_state
         if project:
             final_output = self.projection_head(final_output)
 
