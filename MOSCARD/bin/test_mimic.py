@@ -1,3 +1,4 @@
+from asyncio import subprocess
 import os
 import sys
 import argparse
@@ -17,12 +18,12 @@ import scipy.stats as st
 import random
 import re  # Import regex module
 from tqdm import tqdm
+import gcsfs  # Required to read from GCS
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
 
-from data.dataset_mimic_test import ImageDataset_Mayo_bimodal #ImageDataset_bimodal 
+from data.dataset_mimic_test import ImageDataset_Mayo_bimodal #ImageDataset_bimodal  
 from model.MOSCARD import coatt
-
 
 def get_args():
     parser = argparse.ArgumentParser()
@@ -51,19 +52,18 @@ def get_pred(output, cfg):
     return pred
 
 
-def test_epoch(cfg, args, model, dataloader, out_csv_path):
+def test_epoch(cfg, device_ids, model, dataloader, out_csv_path):
     """Run inference and save results to CSV."""
     torch.set_grad_enabled(False)
     model.eval()
-    device_ids = list(map(int, args.device_ids.split(',')))
+    #device_ids = list(map(int, device_ids.split(',')))
     # TODO: make this a self.device and refactor as a class
     device = torch.device(f'cuda:{device_ids[0]}' if torch.cuda.is_available() else "cpu")
-
+    print(f"Using device: {device}")
     steps = len(dataloader)
     dataiter = iter(dataloader)
     num_tasks = len(cfg.num_classes)
-
-
+    print(f"Number of tasks: {num_tasks}")
     # Define correct column order
     pred_cols = ["MACE_6M", "MACE_1yr", "MACE_2yr", "MACE_5yr"]
     combined_pred = [f"combined_pred_{x}" for x in pred_cols]
@@ -77,9 +77,11 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
 
     with open(out_csv_path, 'w') as f:
         f.write(','.join(test_header) + '\n')
-
+        print(f"Test header written: {test_header}")
         for step in tqdm(range(steps), desc="Model Test Starting", unit="batch", ncols=80):
-            image1, image2, path1, path2, labels = next(dataiter)
+            #image1, image2, path1, path2, labels = next(dataiter)
+            print(f"Step: {step}")
+            index, patient, image1, image2, path1, path2, labels = next(dataiter)
             image1 = image1.to(device)
             image2 = image2.to(device)
             # print(f"image1:{image1}, image2:{image2}")
@@ -94,11 +96,13 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
             ECG_pred = np.zeros((num_tasks, batch_size))
 
             for i in range(num_tasks):
+                print(f"Task: {i}")
                 combined_pred[i,:] = get_pred(combined[i], cfg)
                 CXR_pred[i,:] = get_pred(CXR_output[i], cfg)
                 ECG_pred[i,:] = get_pred(ECG_output[i], cfg)
 
             for i in range(batch_size):
+                print(f"Batch: {i}")
                 combined_batch = ','.join(map(lambda x: '{}'.format(x),  combined_pred[:, i]))
                 CXR_batch = ','.join(map(lambda x: '{}'.format(x),  CXR_pred[:, i]))
                 ECG_batch = ','.join(map(lambda x: '{}'.format(x),  ECG_pred[:, i]))
@@ -106,8 +110,96 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
 
                 result = f"{path1[i]},{path2[i]},{combined_batch},{CXR_batch},{ECG_batch},{MACE_label}"
                 f.write(result + '\n')
+    print(f"Test results written to: {out_csv_path}")
+    # saving CSV to GCS
+    gcs_path = f"gs://moscard-data-98b3/static/mimics-forty-five/output-data/{os.path.basename(out_csv_path)}"
+    save_csv_to_gcs(out_csv_path, gcs_path)
 
+def test_epoch_df(cfg, device_ids, model, dataloader):
+    """
+    Run inference and return the results as a DataFrame (no tqdm).
+    """
+    torch.set_grad_enabled(False)
+    model.eval()
+    # device handling --------------------------------------------------------
+    if isinstance(device_ids, str):
+        device_ids = list(map(int, device_ids.split(',')))
+    device = torch.device(
+        f"cuda:{device_ids[0]}" if torch.cuda.is_available() else "cpu"
+    )
+    print(f"[test_epoch_df] Using device -> {device}")
+    # column names -----------------------------------------------------------
+    pred_cols  = ["MACE_6M", "MACE_1yr", "MACE_2yr", "MACE_5yr"]
+    comb_cols  = [f"combined_pred_{c}" for c in pred_cols]
+    cxr_cols   = [f"CXR_pred_{c}"      for c in pred_cols]
+    ecg_cols   = [f"ECG_pred_{c}"      for c in pred_cols]
+    label_cols = pred_cols
+    header     = ["img_path1", "img_path2"] + comb_cols + cxr_cols + ecg_cols + label_cols
+    # storage for rows -------------------------------------------------------
+    rows = []
+    steps = len(dataloader)
+    num_tasks = len(cfg.num_classes)
+    print(f"[test_epoch_df] Total batches: {steps} | Tasks per sample: {num_tasks}")
+    # -----------------------------------------------------------------------
+    for step, batch in enumerate(dataloader, start=1):
+        print(f"[test_epoch_df] Processing batch {step}/{steps}")
+        # ---- unpack --------------------------------------------------------
+        index, patient, image1, image2, path1, path2, labels = batch
+        image1, image2 = image1.to(device), image2.to(device)
+        # ---- forward pass --------------------------------------------------
+        _, combined, cxr_out, ecg_out, *_ = model(image1, image2)
 
+        batch_size = image1.size(0)
+
+        # ---- predictions ---------------------------------------------------
+        combined_pred = np.zeros((num_tasks, batch_size))
+        cxr_pred      = np.zeros_like(combined_pred)
+        ecg_pred      = np.zeros_like(combined_pred)
+
+        for t in range(num_tasks):
+            print(f"[test_epoch_df] Processing task {t+1}/{num_tasks}")
+            combined_pred[t] = get_pred(combined[t], cfg)
+            cxr_pred[t]      = get_pred(cxr_out[t],  cfg)
+            ecg_pred[t]      = get_pred(ecg_out[t],  cfg)
+
+        labels_np = labels.numpy()  # (batch, tasks)
+
+        # ---- build row per sample -----------------------------------------
+        for i in range(batch_size):
+            print(f"[test_epoch_df] Processing sample {i+1}/{batch_size}")
+            row = {
+                "img_path1": path1[i],
+                "img_path2": path2[i],
+            }
+
+            # predictions
+            for t, col in enumerate(comb_cols):
+                row[col] = combined_pred[t, i]
+            for t, col in enumerate(cxr_cols):
+                row[col] = cxr_pred[t, i]
+            for t, col in enumerate(ecg_cols):
+                row[col] = ecg_pred[t, i]
+
+            # labels
+            for t, col in enumerate(label_cols):
+                row[col] = labels_np[i, t]
+
+            rows.append(row)
+
+    df = pd.DataFrame(rows, columns=header)
+    print(f"[test_epoch_df] Finished. DataFrame shape: {df.shape}")
+    return df
+
+def save_csv_to_gcs(local_path, gcs_path):
+    """Saves a local file to Google Cloud Storage."""
+    try:
+        # Assumes you have authenticated with 'gcloud auth application-default login'
+        # or have the necessary environment variables set for authentication.
+        fs = gcsfs.GCSFileSystem()
+        fs.put(local_path, gcs_path)
+        print(f"Successfully uploaded {local_path} to {gcs_path}")
+    except Exception as e:
+        print(f"Failed to upload {local_path} to {gcs_path}: {e}")
 
 def extract_numeric(value):
     """Extract numeric value from tensor-like strings."""
@@ -177,7 +269,91 @@ def Find_Optimal_Cutoff(target, predicted):
     return list(roc_t['threshold'])
 
 
+def load_checkpoint_from_gcs(gcs_path, device):
+    """
+    Loads a model checkpoint from GCS using gcsfs and returns the checkpoint.
+    """
+    fs = gcsfs.GCSFileSystem()
+    """with fs.open(gcs_path, 'rb') as f:
+        ckpt = torch.load(f, map_location=device)"""
+    with fs.open(gcs_path, "rb") as f:
+        ckpt = torch.load(f, map_location=device, weights_only=False)
+    return ckpt
+
+def run_GCP(in_csv, config_path="MOSCARD/config/config.json", test_model="Baseline", 
+            out_csv_path='test/mimic_test.csv', 
+            device_ids='0,1,2,3', num_workers=8):
+    print("Running test_mimic.run_GCP...") 
+    print(f"Config path: {config_path}, Test model: {test_model}, Output CSV path: {out_csv_path}")
+    print(f"Device IDs: {device_ids}, Number of workers: {num_workers}")
+    # Load configuration
+    if not os.path.exists(config_path):
+        #result = subprocess.run(["ls", "-l"], capture_output=True, text=True)
+        print("Configuration path does not exist. Here are the available items:")
+        print(f"Current directory: {os.getcwd()}")
+        for item in os.listdir('.'):
+            print(f" - {item}")
+        #print(result.stdout)  # Output of the command
+        #raise FileNotFoundError(f"Configuration path {config_path} does not exist.")
+    try:
+        with open(config_path) as f:
+            print(f"Loading configuration from: {f.name}")
+            cfg = edict(json.load(f))
+            print("Successfully loaded configuration from:", f.name)
+    except Exception as e:
+        print(f"Error loading configuration: {e}")
+
+    device_ids = list(map(int, device_ids.split(',')))
+    num_devices = torch.cuda.device_count()
+    """if num_devices < len(device_ids):
+        raise Exception(f"# available GPU: {num_devices} < --device_ids: {len(device_ids)}")"""
+
+    device = torch.device(f'cuda:{device_ids[0]}' if torch.cuda.is_available() else "cpu")
+    print(f'Is cuda available? {torch.cuda.is_available()}')
+    
+    model = coatt(cfg)  # MCAT(cfg) if needed
+    print(f"coatt created successfully.")
+    gcs_ckpt_base = 'gs://moscard-data-98b3/static/model-weights'
+
+    # Determine which model to load
+    if test_model == 'Baseline':
+        ckpt_path = f'{gcs_ckpt_base}/Baseline.ckpt'
+    elif test_model == 'Conf':
+        ckpt_path = f'{gcs_ckpt_base}/Conf.ckpt'
+    elif test_model == 'Causal':
+        ckpt_path = f'{gcs_ckpt_base}/Causal.ckpt'
+    elif test_model == 'CaConf':
+        ckpt_path = f'{gcs_ckpt_base}/CaConf.ckpt'
+    else:
+        raise ValueError(f"Unsupported test_model: {test_model}")
+    print(f"Loading model from: {ckpt_path}")
+    model = DataParallel(model, device_ids=device_ids).to(device).eval()
+    ckpt = load_checkpoint_from_gcs(ckpt_path, device)
+    model.module.load_state_dict(ckpt['state_dict'], strict=False)
+
+    print("Model loaded successfully.")
+
+    dataloader_test = DataLoader(
+        ImageDataset_Mayo_bimodal(in_csv, cfg, mode='test'),
+        batch_size=cfg.dev_batch_size, num_workers=num_workers,
+        drop_last=False, shuffle=False
+    )
+
+    #test_epoch(cfg, device_ids, model, dataloader_test, out_csv_path)
+    # test_epoch_df(cfg, device_ids, model, dataloader)
+    results_df = test_epoch_df(cfg, device_ids, model, dataloader_test)
+    # Save results to CSV
+    results_df.to_csv(out_csv_path, index=False)
+    # print('Save best step:', ckpt['step'], 'AUC:', ckpt['auc_dev_best'])
+    print(f"Results saved to: {out_csv_path}")
+    gcs_path = f"gs://moscard-data-98b3/static/mimics-forty-five/output-data/{os.path.basename(out_csv_path)}"
+    save_csv_to_gcs(out_csv_path, gcs_path)
+    # calculate on preexisting data?
+    print("Yey I did the thing!")
+
 def run(args):
+    print("Running test_mimic...")
+    print(args)
     with open(args.model_path + './MOSCARD/config/config.json') as f:
         cfg = edict(json.load(f))
 
@@ -218,9 +394,9 @@ def run(args):
 
     # print('Save best step:', ckpt['step'], 'AUC:', ckpt['auc_dev_best'])
 
-    # Calculate metrics for each prediction type
+    """# Calculate metrics for each prediction type
     for pred_type in ["combined", "CXR", "ECG"]:
-        calculate_metrics(args.out_csv_path, f"{pred_type}_pred_MACE_6M")
+        calculate_metrics(args.out_csv_path, f"{pred_type}_pred_MACE_6M")"""
 
 
 def main():

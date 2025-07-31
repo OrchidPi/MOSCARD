@@ -11,7 +11,7 @@ import numpy as np
 import torchvision
 
 from . import constants
-
+import pickle
 class MedCLIPTextModel(nn.Module):
     def __init__(self,
         bert_type=constants.BERT_TYPE,
@@ -91,7 +91,16 @@ class MedCLIPVisionModelViT(nn.Module):
         '''
         super().__init__()
         self.vit_type = constants.VIT_TYPE
-        self.model = AutoModel.from_pretrained(self.vit_type)
+        try:
+            self.model = AutoModel.from_pretrained(self.vit_type)
+        except Exception as e:
+            print(f"Error loading model from {self.vit_type}: {e}")
+            print("Using downloaded MedClip model.")
+            self.model = AutoModel.from_pretrained("MOSCARD/model/MedClipVIT")
+        # export model
+        #self.model.save_pretrained("MOSCARD/model/MedClipVIT")
+        # Export model as a TorchScript model
+        #self.model = torch.jit.script(self.model)
         self.projection_head = nn.Linear(768, 512, bias=False)
         if checkpoint is not None:
             state_dict = torch.load(os.path.join(checkpoint, constants.WEIGHTS_NAME))
