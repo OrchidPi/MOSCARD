@@ -78,7 +78,7 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
         f.write(','.join(test_header) + '\n')
 
         for step in tqdm(range(steps), desc="Model Test Starting", unit="batch", ncols=80):
-            image1, image2, path1, path2, labels, clinic_num, acc_num = next(dataiter)
+            acc_num, clinic_num, image1, image2, path1, path2, labels = next(dataiter)
             image1 = image1.to(device)
             image2 = image2.to(device)
             # print(f"image1:{image1}, image2:{image2}")
