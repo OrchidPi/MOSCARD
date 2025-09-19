@@ -72,13 +72,13 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
     MACE_labels = ["MACE_6M", "MACE_1yr", "MACE_2yr", "MACE_5yr"]
 
    
-    test_header = ["img_path1", "img_path2"] + combined_pred + CXR_pred + ECG_pred + MACE_labels
+    test_header = ["clinic_num", "acc_num"] + ["img_path1", "img_path2"] + combined_pred + CXR_pred + ECG_pred + MACE_labels
 
     with open(out_csv_path, 'w') as f:
         f.write(','.join(test_header) + '\n')
 
         for step in tqdm(range(steps), desc="Model Test Starting", unit="batch", ncols=80):
-            image1, image2, path1, path2, labels = next(dataiter)
+            image1, image2, path1, path2, labels, clinic_num, acc_num = next(dataiter)
             image1 = image1.to(device)
             image2 = image2.to(device)
             # print(f"image1:{image1}, image2:{image2}")
@@ -103,7 +103,7 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
                 ECG_batch = ','.join(map(lambda x: '{}'.format(x),  ECG_pred[:, i]))
                 MACE_label = ','.join(map(lambda x: '{}'.format(x),  labels[i]))
 
-                result = f"{path1[i]},{path2[i]},{combined_batch},{CXR_batch},{ECG_batch},{MACE_label}"
+                result = f"{clinic_num[i]},{acc_num[i]},{path1[i]},{path2[i]},{combined_batch},{CXR_batch},{ECG_batch},{MACE_label}"
                 f.write(result + '\n')
 
 
