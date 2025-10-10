@@ -48,6 +48,7 @@ class coatt(nn.Module):
         
         d_model = 512  # e.g. dimension of each patch embedding
         self.coattn = nn.MultiheadAttention(embed_dim=d_model, num_heads=8)
+        self.freeze_()
 
         
         #### Transformer encoders + Attention Heads
@@ -115,7 +116,14 @@ class coatt(nn.Module):
             self.causal_classifiers.append(fc)
 
         
-
+    def freeze_(self):
+        # Freeze both backbones
+        for p in self.backbone1.parameters():
+            p.requires_grad = False
+        for p in self.backbone2.parameters():
+            p.requires_grad = False
+        self.backbone1.eval()
+        self.backbone2.eval()
 
     def forward(self, CXR_feat, ECG_feat):
         embedding_dim = 512
