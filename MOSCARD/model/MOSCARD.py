@@ -48,7 +48,6 @@ class coatt(nn.Module):
         
         d_model = 512  # e.g. dimension of each patch embedding
         self.coattn = nn.MultiheadAttention(embed_dim=d_model, num_heads=8)
-        self.freeze_()
 
         
         #### Transformer encoders + Attention Heads
@@ -116,14 +115,7 @@ class coatt(nn.Module):
             self.causal_classifiers.append(fc)
 
         
-    def freeze_(self):
-        # Freeze both backbones
-        for p in self.backbone1.parameters():
-            p.requires_grad = False
-        for p in self.backbone2.parameters():
-            p.requires_grad = False
-        self.backbone1.eval()
-        self.backbone2.eval()
+
 
     def forward(self, CXR_feat, ECG_feat):
         embedding_dim = 512
@@ -132,15 +124,14 @@ class coatt(nn.Module):
         ecg_logits = [torch.randn(self.cfg.train_batch_size, num) for num in self.cfg.num_classes]
         cxr_causal_logits = [torch.randn(self.cfg.train_batch_size, num) for num in self.cfg.num_causal]
         ecg_causal_logits = [torch.randn(self.cfg.train_batch_size, num) for num in self.cfg.num_causal]
+        
+        ECG_feat, ECG_early_layer = self.backbone1(ECG_feat, return_layer=3)
+        CXR_feat, CXR_early_layer = self.backbone2(CXR_feat, return_layer=3)
 
-        with torch.no_grad():
-            ECG_feat, ECG_early_layer = self.backbone1(ECG_feat, return_layer=3)
-            CXR_feat, CXR_early_layer = self.backbone2(CXR_feat, return_layer=3)
-
-            CXR_output = CXR_feat.permute(1, 0, 2)
-            ECG_output = ECG_feat.permute(1, 0, 2)
-            # print(f"CXR_output:{CXR_output.shape}, ECG_output:{ECG_output.shape}")
-       
+        CXR_output = CXR_feat.permute(1, 0, 2)
+        ECG_output = ECG_feat.permute(1, 0, 2)
+        # print(f"CXR_output:{CXR_output.shape}, ECG_output:{ECG_output.shape}")
+   
         h_coattn, A_coattn = self.coattn(ECG_output, CXR_output, CXR_output)
 
         h_cxr_trans = self.cxr_transformer(h_coattn)      # (n_segments, B, d_model)
