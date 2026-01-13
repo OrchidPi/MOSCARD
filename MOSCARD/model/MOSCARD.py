@@ -128,7 +128,14 @@ class coatt(nn.Module):
         ECG_feat, ECG_early_layer = self.backbone1(ECG_feat, return_layer=3)
         CXR_feat, CXR_early_layer = self.backbone2(CXR_feat, return_layer=3)
 
+        """CXR_output = CXR_feat.permute(1, 0, 2)
+        ECG_output = ECG_feat.permute(1, 0, 2)"""
+        if CXR_feat.dim() == 2:
+            CXR_feat = CXR_feat.unsqueeze(0)  # add seq_len dim
         CXR_output = CXR_feat.permute(1, 0, 2)
+
+        if ECG_feat.dim() == 2:
+            ECG_feat = ECG_feat.unsqueeze(0)
         ECG_output = ECG_feat.permute(1, 0, 2)
         # print(f"CXR_output:{CXR_output.shape}, ECG_output:{ECG_output.shape}")
    

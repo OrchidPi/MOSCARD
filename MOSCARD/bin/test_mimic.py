@@ -20,7 +20,7 @@ from tqdm import tqdm
 
 sys.path.append(os.path.dirname(os.path.abspath(__file__)) + '/../')
 
-from data.dataset_mimic_test import ImageDataset_Mayo_bimodal  # noqa
+from data.dataset_mimic_test import ImageDataset_Mayo_bimodal #ImageDataset_bimodal 
 from model.MOSCARD import coatt
 
 
@@ -56,7 +56,8 @@ def test_epoch(cfg, args, model, dataloader, out_csv_path):
     torch.set_grad_enabled(False)
     model.eval()
     device_ids = list(map(int, args.device_ids.split(',')))
-    device = torch.device('cuda:{}'.format(device_ids[0]))
+    # TODO: make this a self.device and refactor as a class
+    device = torch.device(f'cuda:{device_ids[0]}' if torch.cuda.is_available() else "cpu")
 
     steps = len(dataloader)
     dataiter = iter(dataloader)
@@ -140,7 +141,7 @@ def calculate_metrics(csv_path, pred_col):
     # Bootstrap Confidence Interval for AUC
     AUC_bootstrap = []
     for i in range(100):
-        no = random.randrange(20, df_pre.shape[0], 3)
+        no = random.randrange(df_pre.shape[0], 20, 3)
         temp = df_pre.sample(n=no, replace=True)
         AUC_bootstrap.append(metrics.roc_auc_score(temp['MACE_6M'], temp[pred_col]))
 
@@ -149,7 +150,7 @@ def calculate_metrics(csv_path, pred_col):
     # Bootstrap Confidence Interval for Accuracy
     ACC_bootstrap = []
     for i in range(100):
-        no = random.randrange(20, df_pre.shape[0], 3)
+        no = random.randrange(df_pre.shape[0], 20, 3)
         temp = df_pre.sample(n=no, replace=True)
         temp_preds = (temp[pred_col] >= optimal_threshold).astype(int)
         ACC_bootstrap.append(np.mean(temp_preds == temp['MACE_6M']))
@@ -182,22 +183,24 @@ def run(args):
 
     device_ids = list(map(int, args.device_ids.split(',')))
     num_devices = torch.cuda.device_count()
-    if num_devices < len(device_ids):
+    if num_devices > len(device_ids):
         raise Exception(f"# available GPU: {num_devices} < --device_ids: {len(device_ids)}")
+    # TODO: make this a self.device and refactor as a class
+    device = torch.device(f'cuda:{device_ids[0]}' if torch.cuda.is_available() else "cpu")
+    #device = torch.device(f'cuda:{device_ids[0]}')
+    print(f'Is cuda available? {torch.cuda.is_available()}')
     
-    device = torch.device(f'cuda:{device_ids[0]}')
-
     if args.test_model == 'Baseline':
-        model = coatt(cfg)
+        model = coatt(cfg) #MCAT(cfg)
         ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/Baseline.ckpt')
     elif args.test_model == 'Conf':
-        model = coatt(cfg)
+        model = coatt(cfg) #MCAT(cfg)
         ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/Conf.ckpt')
     elif args.test_model == 'Causal':
-        model = coatt(cfg)
+        model = coatt(cfg) #MCAT(cfg)
         ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/Causal.ckpt')
     elif args.test_model == 'CaConf':
-        model = coatt(cfg)
+        model = coatt(cfg) #MCAT(cfg)
         ckpt_path = os.path.join(args.model_path, './MOSCARD/ckpt/CaConf.ckpt')
     
     
